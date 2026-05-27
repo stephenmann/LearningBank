@@ -234,12 +234,14 @@ This section is a click-by-click guide for each identity provider.
 ## GitHub Actions Azure Deployment Requirements
 
 This section documents everything required for .github/workflows/deploy-azure.yaml to deploy successfully.
+For direct-to-production deployment without slots, use .github/workflows/deploy-azure-noslots.yaml.
 
 ### What this workflow expects
 - Workflow trigger: deployment is started manually with workflow_dispatch and the deploy job runs only when dispatched from main.
 - Azure App Service resources already exist:
   - API app name: learningbank-api
   - Web app name: learningbank-web
+  - Slot name for both apps: staging
 - The GitHub repository has all required Actions secrets configured.
 - Azure OIDC federation is configured so GitHub Actions can sign in without a stored Azure password or publish profile.
 
@@ -248,8 +250,11 @@ This section documents everything required for .github/workflows/deploy-azure.ya
 2. Create App Service apps with the exact names expected by the workflow:
   - learningbank-api
   - learningbank-web
-3. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
-4. Confirm both production apps allow deployment and smoke tests.
+3. Create a staging deployment slot for each app:
+   - learningbank-api/staging
+   - learningbank-web/staging
+4. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
+5. Confirm both production and staging slots have networking rules that allow deployment and smoke tests.
 
 ### Configure OIDC login for GitHub Actions (Azure login without client secret)
 
@@ -344,12 +349,13 @@ Web runtime secrets (applied to Azure Web App settings during deploy):
 1. Run CI manually and ensure it succeeds.
 2. Manually dispatch Deploy Azure from main.
 3. Check Azure Login (OIDC) step succeeds.
-4. Check app settings steps succeed for both API and web production apps.
+4. Check app settings steps succeed for both API and web staging slots.
 5. Check EF migration step succeeds.
 6. Check both smoke tests pass:
-  - API health on production
-  - Web root on production
-7. Confirm production endpoints respond after deployment.
+  - API health on staging
+  - Web root on staging
+7. Check slot swaps succeed for API and web.
+8. Confirm production endpoints respond after swap.
 
 ### Common deployment failures and fixes
 
@@ -387,14 +393,14 @@ Fix:
 - Verify database firewall/network rules allow migration traffic.
 - Verify the target database user has schema migration permissions.
 
-#### Smoke test fails after direct production deploy
+#### Smoke test fails after deploy to staging
 Symptoms:
 - curl checks fail for API /health or web root URL.
 
 Fix:
-- Check application startup logs in the production App Service.
+- Check application startup logs in App Service for staging slot.
 - Verify app settings values required at startup were applied correctly.
-- Verify the app has the expected runtime stack and startup command.
+- Verify slot has the expected runtime stack and startup command.
 
 ## Common Issues
 

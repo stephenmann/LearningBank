@@ -77,7 +77,8 @@ When generating code, default to these choices. Do not introduce alternatives wi
 │   ├── copilot-instructions.md      ← this file
 │   └── workflows/
 │       ├── ci.yml                    ← manually run build, test, lint
-│       └── deploy-azure.yaml         ← manually deploy to Azure App Service from main
+│       ├── deploy-azure.yaml         ← manual deploy using staging slots + swap
+│       └── deploy-azure-noslots.yaml ← manual deploy directly to production
 ├── src/
 │   ├── LearningBank.Api/             ← ASP.NET Core Web API (.NET 9)
 │   ├── LearningBank.Domain/          ← entities, value objects, domain rules
@@ -205,12 +206,18 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 1. Build API as self-contained Linux x64 publish
 2. Build Next.js as standalone output
 3. Authenticate to Azure via OIDC federated credential (no stored secrets)
-4. Configure production app settings for API and web
-5. Run EF Core migrations against the production database
-6. Deploy API to `learningbank-api`, smoke test, deploy web to `learningbank-web`, smoke test
+4. Configure staging slot app settings for API and web
+5. Deploy API to `learningbank-api` slot `staging`, run EF Core migrations, smoke test, swap to `production`
+6. Deploy web to `learningbank-web` slot `staging`, smoke test, swap to `production`
 7. Post deployment summary to the workflow run
 
-Deployments should remain **idempotent**. This manual direct-to-production workflow relies on smoke tests and Azure platform rollback options rather than slot swaps or workflow-managed rollback artifacts.
+**`deploy-azure-noslots.yaml`** — runs on manual workflow dispatch from `main`:
+1. Build API and web outputs
+2. Configure production app settings
+3. Run EF Core migrations
+4. Deploy API and web directly to production apps and run smoke tests
+
+Deployments must remain **idempotent**; prefer the slot-based workflow when rollback safety is required.
 
 ### Dependency Automation
 - **Dependabot** enabled for `nuget`, `npm`, `github-actions`, and `dockerfile` ecosystems. Weekly cadence. Auto-merge minor/patch updates after CI passes.
