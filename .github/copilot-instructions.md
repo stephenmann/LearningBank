@@ -76,8 +76,9 @@ When generating code, default to these choices. Do not introduce alternatives wi
 ├── .github/
 │   ├── copilot-instructions.md      ← this file
 │   └── workflows/
-│       ├── ci.yml                    ← build, test, lint on every PR
-│       └── deploy-azure.yml          ← deploy to Azure App Service on main
+│       ├── ci.yml                    ← manually run build, test, lint
+│       ├── deploy-azure.yaml         ← manual deploy using staging slots + swap
+│       └── deploy-azure-noslots.yaml ← manual deploy directly to production
 ├── src/
 │   ├── LearningBank.Api/             ← ASP.NET Core Web API (.NET 9)
 │   ├── LearningBank.Domain/          ← entities, value objects, domain rules
@@ -191,7 +192,7 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 
 ### GitHub Actions Workflows
 
-**`ci.yml`** — runs on every PR and push:
+**`ci.yml`** — runs on manual workflow dispatch:
 1. Checkout
 2. Setup .NET 9, Node 22
 3. Restore + build .NET solution
@@ -201,15 +202,22 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 7. Run `dotnet list package --vulnerable` and `npm audit --omit=dev` — fail on high/critical
 8. CodeQL analysis
 
-**`deploy-azure.yml`** — runs on push to `main` after CI passes:
+**`deploy-azure.yaml`** — runs on manual workflow dispatch from `main`:
 1. Build API as self-contained Linux x64 publish
 2. Build Next.js as standalone output
 3. Authenticate to Azure via OIDC federated credential (no stored secrets)
-4. Deploy API to `learningbank-api` App Service slot `staging`, run EF Core migrations, smoke test, swap to `production`
-5. Deploy web to `learningbank-web` App Service slot `staging`, smoke test, swap to `production`
-6. Post deployment summary to PR / commit
+4. Configure staging slot app settings for API and web
+5. Deploy API to `learningbank-api` slot `staging`, run EF Core migrations, smoke test, swap to `production`
+6. Deploy web to `learningbank-web` slot `staging`, smoke test, swap to `production`
+7. Post deployment summary to the workflow run
 
-Deployments must be **idempotent** and **reversible**. Every deploy tags the commit and uploads the build artifact for rollback.
+**`deploy-azure-noslots.yaml`** — runs on manual workflow dispatch from `main`:
+1. Build API and web outputs
+2. Configure production app settings
+3. Run EF Core migrations
+4. Deploy API and web directly to production apps and run smoke tests
+
+Deployments must remain **idempotent**; prefer the slot-based workflow when rollback safety is required.
 
 ### Dependency Automation
 - **Dependabot** enabled for `nuget`, `npm`, `github-actions`, and `dockerfile` ecosystems. Weekly cadence. Auto-merge minor/patch updates after CI passes.

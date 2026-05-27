@@ -1,0 +1,153 @@
+name: Deploy Azure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy API and Web
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
+    env:
+      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      API_APP_NAME: learningbank-api
+      WEB_APP_NAME: learningbank-web
+      SLOT_NAME: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/learning-bank-web/package-lock.json
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Publish API (self-contained linux-x64)
+        run: |
+          dotnet restore LearningBank.sln
+          dotnet publish src/LearningBank.Api/LearningBank.Api.csproj \
+            --configuration Release \
+            --runtime linux-x64 \
+            --self-contained true \
+            --output ./artifacts/api
+
+      - name: Build Next.js standalone web
+        working-directory: src/learning-bank-web
+        run: |
+          npm ci
+          npm run build
+          mkdir -p .next/standalone/.next
+          cp -R .next/static .next/standalone/.next/static
+          cp -R public .next/standalone/public
+
+      - name: Configure API app settings (staging)
+        run: |
+          az webapp config appsettings set \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --settings \
+              ASPNETCORE_ENVIRONMENT="Production" \
+              Auth__Authority="${{ secrets.API_AUTH_AUTHORITY }}" \
+              Auth__Audience="${{ secrets.API_AUTH_AUDIENCE }}" \
+              Auth__WebAppUrl="${{ secrets.NEXTAUTH_URL }}"
+
+      - name: Configure Web app settings from repository secrets (staging)
+        run: |
+          az webapp config appsettings set \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$WEB_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --settings \
+              NODE_ENV="production" \
+              AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
+              GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              AZURE_AD_CLIENT_ID="${{ secrets.AZURE_AD_CLIENT_ID }}" \
+              AZURE_AD_CLIENT_SECRET="${{ secrets.AZURE_AD_CLIENT_SECRET }}" \
+              AZURE_AD_TENANT_ID="${{ secrets.AZURE_AD_TENANT_ID }}" \
+              NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
+              NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
+
+      - name: Deploy API to staging slot
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: learningbank-api
+          slot-name: staging
+          package: ./artifacts/api
+
+      - name: Run EF Core migrations against production DB
+        env:
+          ConnectionStrings__SqlServer: ${{ secrets.API_CONNECTION_STRING }}
+        run: |
+          dotnet tool install --global dotnet-ef
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet ef database update \
+            --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \
+            --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
+            --connection "$ConnectionStrings__SqlServer"
+
+      - name: API smoke test (staging)
+        run: curl --fail --show-error --silent "https://${API_APP_NAME}-${SLOT_NAME}.azurewebsites.net/health"
+
+      - name: Swap API staging to production
+        run: |
+          az webapp deployment slot swap \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --target-slot production
+
+      - name: Deploy Web to staging slot
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: learningbank-web
+          slot-name: staging
+          package: ./src/learning-bank-web/.next/standalone
+
+      - name: Web smoke test (staging)
+        run: curl --fail --show-error --silent "https://${WEB_APP_NAME}-${SLOT_NAME}.azurewebsites.net/" > /dev/null
+
+      - name: Swap Web staging to production
+        run: |
+          az webapp deployment slot swap \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$WEB_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --target-slot production
+
+      - name: Deployment summary
+        run: |
+          {
+            echo "## Azure Deployment Summary"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- API app: ${API_APP_NAME} (slot swapped from ${SLOT_NAME})"
+            echo "- Web app: ${WEB_APP_NAME} (slot swapped from ${SLOT_NAME})"
+            echo "- Auth secrets source: GitHub repository secrets"
+          } >> "$GITHUB_STEP_SUMMARY"

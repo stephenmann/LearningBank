@@ -1,35 +1,32 @@
-name: Deploy Azure
+name: Deploy Azure (No Slots)
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  workflow_dispatch:
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: deploy-main
+  group: deploy-azure-noslots
   cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy API and Web
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
 
     env:
       RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
       API_APP_NAME: learningbank-api
       WEB_APP_NAME: learningbank-web
-      SLOT_NAME: staging
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.sha }}
 
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
@@ -68,24 +65,22 @@ jobs:
           cp -R .next/static .next/standalone/.next/static
           cp -R public .next/standalone/public
 
-      - name: Configure API app settings (staging)
+      - name: Configure API app settings
         run: |
           az webapp config appsettings set \
             --resource-group "$RESOURCE_GROUP" \
             --name "$API_APP_NAME" \
-            --slot "$SLOT_NAME" \
             --settings \
               ASPNETCORE_ENVIRONMENT="Production" \
               Auth__Authority="${{ secrets.API_AUTH_AUTHORITY }}" \
               Auth__Audience="${{ secrets.API_AUTH_AUDIENCE }}" \
               Auth__WebAppUrl="${{ secrets.NEXTAUTH_URL }}"
 
-      - name: Configure Web app settings from repository secrets (staging)
+      - name: Configure Web app settings from repository secrets
         run: |
           az webapp config appsettings set \
             --resource-group "$RESOURCE_GROUP" \
             --name "$WEB_APP_NAME" \
-            --slot "$SLOT_NAME" \
             --settings \
               NODE_ENV="production" \
               AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
@@ -96,13 +91,6 @@ jobs:
               AZURE_AD_TENANT_ID="${{ secrets.AZURE_AD_TENANT_ID }}" \
               NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
               NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
-
-      - name: Deploy API to staging slot
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: learningbank-api
-          slot-name: staging
-          package: ./artifacts/api
 
       - name: Run EF Core migrations against production DB
         env:
@@ -115,41 +103,30 @@ jobs:
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
             --connection "$ConnectionStrings__SqlServer"
 
-      - name: API smoke test (staging)
-        run: curl --fail --show-error --silent "https://${API_APP_NAME}-${SLOT_NAME}.azurewebsites.net/health"
+      - name: Deploy API
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: learningbank-api
+          package: ./artifacts/api
 
-      - name: Swap API staging to production
-        run: |
-          az webapp deployment slot swap \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$API_APP_NAME" \
-            --slot "$SLOT_NAME" \
-            --target-slot production
+      - name: API smoke test
+        run: curl --fail --show-error --silent "https://${API_APP_NAME}.azurewebsites.net/health"
 
-      - name: Deploy Web to staging slot
+      - name: Deploy Web
         uses: azure/webapps-deploy@v3
         with:
           app-name: learningbank-web
-          slot-name: staging
           package: ./src/learning-bank-web/.next/standalone
 
-      - name: Web smoke test (staging)
-        run: curl --fail --show-error --silent "https://${WEB_APP_NAME}-${SLOT_NAME}.azurewebsites.net/" > /dev/null
-
-      - name: Swap Web staging to production
-        run: |
-          az webapp deployment slot swap \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$WEB_APP_NAME" \
-            --slot "$SLOT_NAME" \
-            --target-slot production
+      - name: Web smoke test
+        run: curl --fail --show-error --silent "https://${WEB_APP_NAME}.azurewebsites.net/" > /dev/null
 
       - name: Deployment summary
         run: |
           {
             echo "## Azure Deployment Summary"
-            echo "- Commit: ${{ github.event.workflow_run.head_sha }}"
-            echo "- API app: ${API_APP_NAME} (slot swapped from ${SLOT_NAME})"
-            echo "- Web app: ${WEB_APP_NAME} (slot swapped from ${SLOT_NAME})"
+            echo "- Commit: ${{ github.sha }}"
+            echo "- API app: ${API_APP_NAME} (deployed directly)"
+            echo "- Web app: ${WEB_APP_NAME} (deployed directly)"
             echo "- Auth secrets source: GitHub repository secrets"
           } >> "$GITHUB_STEP_SUMMARY"
