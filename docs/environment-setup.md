@@ -233,14 +233,13 @@ This section is a click-by-click guide for each identity provider.
 
 ## GitHub Actions Azure Deployment Requirements
 
-This section documents everything required for .github/workflows/deploy-azure.yml to deploy successfully.
+This section documents everything required for .github/workflows/deploy-azure.yaml to deploy successfully.
 
 ### What this workflow expects
-- Workflow trigger: CI must complete successfully on main. Deployment runs from workflow_run.
+- Workflow trigger: deployment is started manually with workflow_dispatch and the deploy job runs only when dispatched from main.
 - Azure App Service resources already exist:
   - API app name: learningbank-api
   - Web app name: learningbank-web
-  - Slot name for both apps: staging
 - The GitHub repository has all required Actions secrets configured.
 - Azure OIDC federation is configured so GitHub Actions can sign in without a stored Azure password or publish profile.
 
@@ -249,11 +248,8 @@ This section documents everything required for .github/workflows/deploy-azure.ym
 2. Create App Service apps with the exact names expected by the workflow:
   - learningbank-api
   - learningbank-web
-3. Create a staging deployment slot for each app:
-  - learningbank-api/staging
-  - learningbank-web/staging
-4. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
-5. Confirm both production and staging slots have networking rules that allow deployment and smoke tests.
+3. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
+4. Confirm both production apps allow deployment and smoke tests.
 
 ### Configure OIDC login for GitHub Actions (Azure login without client secret)
 
@@ -267,7 +263,7 @@ Setup steps:
   - Azure Portal -> Microsoft Entra ID -> App registrations -> New registration.
   - Name suggestion: LearningBank GitHub Deploy.
   - Register the app.
-2. Capture the three IDs required by deploy-azure.yml:
+2. Capture the three IDs required by deploy-azure.yaml:
   - From App registration Overview:
     - Application (client) ID -> AZURE_CLIENT_ID
     - Directory (tenant) ID -> AZURE_TENANT_ID
@@ -295,21 +291,20 @@ Setup steps:
     - AZURE_TENANT_ID
     - AZURE_SUBSCRIPTION_ID
     - AZURE_RESOURCE_GROUP
-6. Confirm workflow permission and login inputs in deploy-azure.yml:
+6. Confirm workflow permission and login inputs in deploy-azure.yaml:
   - Top-level permissions include id-token: write and contents: read.
   - Azure login step uses:
     - client-id: ${{ secrets.AZURE_CLIENT_ID }}
     - tenant-id: ${{ secrets.AZURE_TENANT_ID }}
     - subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 7. Validate OIDC end-to-end:
-  - Push to main and let CI finish.
-  - Confirm Deploy Azure starts from workflow_run.
-  - Confirm Azure Login (OIDC) succeeds with no client secret or publish profile.
-  - Confirm subsequent az webapp commands succeed.
+   - Manually dispatch Deploy Azure from main.
+   - Confirm Azure Login (OIDC) succeeds with no client secret or publish profile.
+   - Confirm subsequent az webapp commands succeed.
 
 OIDC troubleshooting quick checks:
-- Ensure federated credential matches this exact repo and branch.
-- Ensure workflow run is on main branch (not a different branch ref).
+- Ensure federated credential matches this exact repo and main branch.
+- Ensure the workflow was dispatched from main (not a different branch ref).
 - Ensure AZURE_CLIENT_ID, AZURE_TENANT_ID, and AZURE_SUBSCRIPTION_ID are copied exactly.
 - Ensure the service principal has Contributor (or equivalent required permissions) at the correct scope.
 - If setup was just changed, rerun after propagation delay.
@@ -346,16 +341,15 @@ Web runtime secrets (applied to Azure Web App settings during deploy):
 - API_CONNECTION_STRING: should target production database and use least-privilege credentials.
 
 ### First deployment validation checklist
-1. Run CI on main and ensure it succeeds.
-2. Confirm Deploy Azure workflow starts automatically after CI success.
+1. Run CI manually and ensure it succeeds.
+2. Manually dispatch Deploy Azure from main.
 3. Check Azure Login (OIDC) step succeeds.
-4. Check app settings steps succeed for both API and web staging slots.
+4. Check app settings steps succeed for both API and web production apps.
 5. Check EF migration step succeeds.
 6. Check both smoke tests pass:
-  - API health on staging
-  - Web root on staging
-7. Check slot swaps succeed for API and web.
-8. Confirm production endpoints respond after swap.
+  - API health on production
+  - Web root on production
+7. Confirm production endpoints respond after deployment.
 
 ### Common deployment failures and fixes
 
@@ -393,14 +387,14 @@ Fix:
 - Verify database firewall/network rules allow migration traffic.
 - Verify the target database user has schema migration permissions.
 
-#### Smoke test fails after deploy to staging
+#### Smoke test fails after direct production deploy
 Symptoms:
 - curl checks fail for API /health or web root URL.
 
 Fix:
-- Check application startup logs in App Service for staging slot.
+- Check application startup logs in the production App Service.
 - Verify app settings values required at startup were applied correctly.
-- Verify slot has the expected runtime stack and startup command.
+- Verify the app has the expected runtime stack and startup command.
 
 ## Common Issues
 
