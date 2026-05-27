@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   if (!user) {
     return (
       <div className="max-w-md bg-white rounded-[24px] p-6 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.08)]">
-        <h1 className="text-xl font-black text-[#0e0f0c] mb-2">You're signed in, but setup isn't complete</h1>
+        <h1 className="text-xl font-black text-[#0e0f0c] mb-2">You&apos;re signed in, but setup isn&apos;t complete</h1>
         <p className="text-sm text-[#454745] mb-4">
           We could not resolve your API user profile after authentication. This is usually an Azure tenant/app configuration mismatch.
         </p>

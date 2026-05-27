@@ -56,7 +56,7 @@ export default async function ChildrenPage() {
 
       <section>
         <h2 className="text-base font-black text-[#0e0f0c] mb-3">Linked Children</h2>
-        <ChildrenClient children={children} balances={balances} />
+        <ChildrenClient childItems={children} balances={balances} />
       </section>
     </div>
   );
