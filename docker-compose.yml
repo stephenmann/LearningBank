@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./src/LearningBank.Api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Database__Provider=Sqlite
+      - ConnectionStrings__Sqlite=Data Source=App_Data/learningbank.dev.db
+      - Auth__WebAppUrl=http://localhost:3000
+    volumes:
+      - api-data:/app/App_Data
+
+  web:
+    build:
+      context: ./src/learning-bank-web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./src/learning-bank-web/.env.local
+    depends_on:
+      - api
+
+volumes:
+  api-data:

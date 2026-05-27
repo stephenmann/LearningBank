@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap");
+
+/* Explicit source paths ensure utility classes are generated for App Router files. */
+@source "./**/*.{js,ts,jsx,tsx,mdx}";
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
+
+@theme inline {
+  /* ── Wise-inspired Design Tokens ───────────────────────────────── */
+  --color-primary:         #9fe870;
+  --color-on-primary:      #0e0f0c;
+  --color-primary-active:  #cdffad;
+  --color-primary-neutral: #c5edab;
+  --color-primary-pale:    #e2f6d5;
+
+  --color-ink:             #0e0f0c;
+  --color-ink-deep:        #163300;
+  --color-body:            #454745;
+  --color-mute:            #868685;
+  --color-canvas:          #ffffff;
+  --color-canvas-soft:     #e8ebe6;
+
+  --color-positive:        #2ead4b;
+  --color-positive-deep:   #054d28;
+  --color-warning:         #ffd11a;
+  --color-warning-deep:    #b86700;
+  --color-warning-content: #4a3b1c;
+  --color-negative:        #d03238;
+  --color-negative-deep:   #a72027;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+}
+
+:root {
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas-soft);
+  color: var(--color-ink);
+}
+
+/* Tabular numerals for balances */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+

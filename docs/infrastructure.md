@@ -1,0 +1,115 @@
+# Infrastructure Component Documentation
+
+## Scope
+The infrastructure project is in src/LearningBank.Infrastructure and implements persistence and data access for domain contracts using Entity Framework Core.
+
+## Responsibilities
+- Configure EF Core DbContext and entity mappings.
+- Implement domain repository interfaces.
+- Manage database provider selection by configuration.
+- Expose a single DI extension for the API host.
+- Hold EF migrations.
+
+## Dependency Direction
+Infrastructure depends on:
+- LearningBank.Domain (entities and repository interfaces)
+- EF Core provider packages
+
+Infrastructure is consumed by:
+- LearningBank.Api via AddInfrastructure
+
+## Service Registration
+File: src/LearningBank.Infrastructure/InfrastructureServiceExtensions.cs
+
+AddInfrastructure reads Database:Provider and configures DbContext:
+- SqlServer provider when Database:Provider is SqlServer
+- Sqlite provider otherwise
+
+Default Sqlite connection string:
+- Data Source=App_Data/learningbank.dev.db
+
+Repositories registered as scoped services:
+- UnitOfWork
+- UserRepository
+- TransactionRepository
+- CategoryRepository
+- TransferRequestRepository
+- AuditLogRepository
+
+## DbContext
+File: src/LearningBank.Infrastructure/Data/LearningBankDbContext.cs
+
+DbSets:
+- Users
+- ChildLinks
+- Categories
+- Transactions
+- TransferRequests
+- AuditLogs
+
+Configuration strategy:
+- ApplyConfigurationsFromAssembly to auto-load IEntityTypeConfiguration classes.
+
+## Entity Configurations
+Location: src/LearningBank.Infrastructure/Data/Configurations
+
+### TransactionConfiguration highlights
+- Amount column type decimal(18,4)
+- Description max length 500
+- Child foreign key with cascade delete
+- Category foreign key with restrict delete
+- Indexes on child plus account and posted timestamp
+
+Other configuration files:
+- UserConfiguration
+- ChildLinkConfiguration
+- CategoryConfiguration
+- TransferRequestConfiguration
+- AuditLogConfiguration
+
+## Migrations
+Location: src/LearningBank.Infrastructure/Data/Migrations
+
+Current migration set includes:
+- InitialCreate migration and designer
+- LearningBankDbContextModelSnapshot
+
+Migration assembly is explicitly set to LearningBank.Infrastructure in provider options.
+
+## Repository Implementations
+Location: src/LearningBank.Infrastructure/Repositories
+
+Implemented repository classes:
+- UserRepository
+- TransactionRepository
+- CategoryRepository
+- TransferRequestRepository
+- AuditLogRepository
+- UnitOfWork
+
+Repository purpose:
+- Translate domain repository contract calls into EF queries and writes.
+- Keep API and domain free from EF-specific logic.
+
+## Operational Notes
+Local development:
+- Uses Sqlite file under src/LearningBank.Api/App_Data when configured.
+
+Production direction:
+- Supports SqlServer provider switching through configuration.
+
+Startup behavior:
+- API applies migrations at startup using this DbContext.
+
+## Known Gaps and Follow-ups
+- Postgres provider branch is not yet implemented in AddInfrastructure.
+- There are no infrastructure-level integration tests yet.
+- Performance profiling and query-level metrics are not yet documented.
+
+## Extension Guidance
+When adding new persistence features:
+1. Add domain contract changes first in LearningBank.Domain.
+2. Implement repository method in LearningBank.Infrastructure.
+3. Add or update EF configuration for new fields and indexes.
+4. Create migration and validate startup migration path.
+5. Add integration tests for non-trivial query behavior.
