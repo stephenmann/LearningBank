@@ -91,12 +91,6 @@ jobs:
               NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
               NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
 
-      - name: Deploy API
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: learningbank-api
-          package: ./artifacts/api
-
       - name: Run EF Core migrations against production DB
         env:
           ConnectionStrings__SqlServer: ${{ secrets.API_CONNECTION_STRING }}
@@ -107,6 +101,12 @@ jobs:
             --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
             --connection "$ConnectionStrings__SqlServer"
+
+      - name: Deploy API
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: learningbank-api
+          package: ./artifacts/api
 
       - name: API smoke test
         run: curl --fail --show-error --silent "https://${API_APP_NAME}.azurewebsites.net/health"
