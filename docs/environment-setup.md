@@ -231,6 +231,177 @@ This section is a click-by-click guide for each identity provider.
 4. Confirm API health endpoint responds:
    - http://localhost:5001/health
 
+## GitHub Actions Azure Deployment Requirements
+
+This section documents everything required for .github/workflows/deploy-azure.yml to deploy successfully.
+
+### What this workflow expects
+- Workflow trigger: CI must complete successfully on main. Deployment runs from workflow_run.
+- Azure App Service resources already exist:
+  - API app name: learningbank-api
+  - Web app name: learningbank-web
+  - Slot name for both apps: staging
+- The GitHub repository has all required Actions secrets configured.
+- Azure OIDC federation is configured so GitHub Actions can sign in without a stored Azure password or publish profile.
+
+### Required Azure resources (before first deployment)
+1. Create or choose an Azure resource group.
+2. Create App Service apps with the exact names expected by the workflow:
+  - learningbank-api
+  - learningbank-web
+3. Create a staging deployment slot for each app:
+  - learningbank-api/staging
+  - learningbank-web/staging
+4. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
+5. Confirm both production and staging slots have networking rules that allow deployment and smoke tests.
+
+### Configure OIDC login for GitHub Actions (Azure login without client secret)
+
+The deploy workflow uses azure/login@v2 with OIDC and requires these three secrets:
+- AZURE_CLIENT_ID
+- AZURE_TENANT_ID
+- AZURE_SUBSCRIPTION_ID
+
+Setup steps:
+1. Create an App Registration for deployment identity:
+  - Azure Portal -> Microsoft Entra ID -> App registrations -> New registration.
+  - Name suggestion: LearningBank GitHub Deploy.
+  - Register the app.
+2. Capture the three IDs required by deploy-azure.yml:
+  - From App registration Overview:
+    - Application (client) ID -> AZURE_CLIENT_ID
+    - Directory (tenant) ID -> AZURE_TENANT_ID
+  - From Subscription Overview:
+    - Subscription ID -> AZURE_SUBSCRIPTION_ID
+3. Add GitHub federated credential on the App Registration:
+  - App registration -> Certificates and secrets -> Federated credentials -> Add credential.
+  - Scenario: GitHub Actions deploying Azure resources.
+  - Fill values:
+    - Organization: your GitHub org or username
+    - Repository: LearningBank
+    - Entity type: Branch
+    - Branch: main
+  - Save.
+4. Assign RBAC to the App Registration service principal:
+  - Azure Portal -> Resource groups -> <your-resource-group> -> Access control (IAM) -> Add role assignment.
+  - Role: Contributor.
+  - Assign access to: User, group, or service principal.
+  - Select the deployment App Registration service principal.
+  - Save and wait 5 to 10 minutes for permissions to propagate.
+5. Add required GitHub repository secrets:
+  - GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Repository secrets.
+  - Create:
+    - AZURE_CLIENT_ID
+    - AZURE_TENANT_ID
+    - AZURE_SUBSCRIPTION_ID
+    - AZURE_RESOURCE_GROUP
+6. Confirm workflow permission and login inputs in deploy-azure.yml:
+  - Top-level permissions include id-token: write and contents: read.
+  - Azure login step uses:
+    - client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    - tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    - subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+7. Validate OIDC end-to-end:
+  - Push to main and let CI finish.
+  - Confirm Deploy Azure starts from workflow_run.
+  - Confirm Azure Login (OIDC) succeeds with no client secret or publish profile.
+  - Confirm subsequent az webapp commands succeed.
+
+OIDC troubleshooting quick checks:
+- Ensure federated credential matches this exact repo and branch.
+- Ensure workflow run is on main branch (not a different branch ref).
+- Ensure AZURE_CLIENT_ID, AZURE_TENANT_ID, and AZURE_SUBSCRIPTION_ID are copied exactly.
+- Ensure the service principal has Contributor (or equivalent required permissions) at the correct scope.
+- If setup was just changed, rerun after propagation delay.
+
+### Required GitHub repository secrets
+
+Add these under GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Repository secrets.
+
+Azure deployment/auth secrets:
+- AZURE_CLIENT_ID: App Registration client ID used by OIDC login.
+- AZURE_TENANT_ID: Tenant ID for the Azure directory.
+- AZURE_SUBSCRIPTION_ID: Subscription containing the App Services.
+- AZURE_RESOURCE_GROUP: Resource group name containing both apps.
+
+API runtime/deploy secrets:
+- API_CONNECTION_STRING: SQL connection string used for EF Core migration step.
+- API_AUTH_AUTHORITY: OIDC authority that the API validates tokens against.
+- API_AUTH_AUDIENCE: Expected audience for API tokens.
+
+Web runtime secrets (applied to Azure Web App settings during deploy):
+- AUTH_SECRET
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+- AZURE_AD_CLIENT_ID
+- AZURE_AD_CLIENT_SECRET
+- AZURE_AD_TENANT_ID
+- NEXTAUTH_URL
+- NEXT_PUBLIC_API_URL
+
+### Secret value guidance for production
+- NEXTAUTH_URL: production web URL, for example https://learningbank-web.azurewebsites.net
+- NEXT_PUBLIC_API_URL: production API base URL including route prefix, for example https://learningbank-api.azurewebsites.net/api/v1
+- API_AUTH_AUTHORITY and API_AUTH_AUDIENCE: must match the token issuer/audience used by your production auth model.
+- API_CONNECTION_STRING: should target production database and use least-privilege credentials.
+
+### First deployment validation checklist
+1. Run CI on main and ensure it succeeds.
+2. Confirm Deploy Azure workflow starts automatically after CI success.
+3. Check Azure Login (OIDC) step succeeds.
+4. Check app settings steps succeed for both API and web staging slots.
+5. Check EF migration step succeeds.
+6. Check both smoke tests pass:
+  - API health on staging
+  - Web root on staging
+7. Check slot swaps succeed for API and web.
+8. Confirm production endpoints respond after swap.
+
+### Common deployment failures and fixes
+
+#### Azure login fails with OIDC/federation error
+Symptoms:
+- azure/login step fails before any deployment step runs.
+
+Fix:
+- Verify AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID are correct.
+- Verify federated credential issuer and branch subject are configured for main.
+- Wait for RBAC/federation propagation and rerun.
+
+#### Resource group or app not found
+Symptoms:
+- az webapp commands fail with not found errors.
+
+Fix:
+- Confirm AZURE_RESOURCE_GROUP secret value.
+- Confirm app names and slot names match workflow expectations exactly.
+
+#### App settings step fails
+Symptoms:
+- az webapp config appsettings set returns authorization or validation errors.
+
+Fix:
+- Ensure the GitHub OIDC principal has permission to update app settings.
+- Verify all referenced secrets exist and are non-empty.
+
+#### EF migration fails
+Symptoms:
+- dotnet ef database update fails in deploy workflow.
+
+Fix:
+- Verify API_CONNECTION_STRING is valid and reachable from GitHub-hosted runners.
+- Verify database firewall/network rules allow migration traffic.
+- Verify the target database user has schema migration permissions.
+
+#### Smoke test fails after deploy to staging
+Symptoms:
+- curl checks fail for API /health or web root URL.
+
+Fix:
+- Check application startup logs in App Service for staging slot.
+- Verify app settings values required at startup were applied correctly.
+- Verify slot has the expected runtime stack and startup command.
+
 ## Common Issues
 
 ### Invalid redirect URI
