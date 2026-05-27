@@ -113,8 +113,19 @@ jobs:
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
             --connection "$ConnectionStrings__SqlServer"
 
+      - name: Resolve API default hostname (staging)
+        id: api-host
+        run: |
+          HOSTNAME=$(az webapp show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --query defaultHostName \
+            --output tsv)
+          echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
+
       - name: API smoke test (staging)
-        run: curl --fail --show-error --silent "https://${API_APP_NAME}-${SLOT_NAME}.azurewebsites.net/health"
+        run: curl --fail --show-error --silent "https://${{ steps.api-host.outputs.hostname }}/health"
 
       - name: Swap API staging to production
         run: |
@@ -131,8 +142,19 @@ jobs:
           slot-name: staging
           package: ./src/learning-bank-web/.next/standalone
 
+      - name: Resolve Web default hostname (staging)
+        id: web-host
+        run: |
+          HOSTNAME=$(az webapp show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$WEB_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --query defaultHostName \
+            --output tsv)
+          echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
+
       - name: Web smoke test (staging)
-        run: curl --fail --show-error --silent "https://${WEB_APP_NAME}-${SLOT_NAME}.azurewebsites.net/" > /dev/null
+        run: curl --fail --show-error --silent "https://${{ steps.web-host.outputs.hostname }}/" > /dev/null
 
       - name: Swap Web staging to production
         run: |
