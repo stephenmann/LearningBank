@@ -110,8 +110,18 @@ jobs:
           app-name: learningbank-api
           package: ./artifacts/api
 
+      - name: Resolve API default hostname
+        id: api-host
+        run: |
+          HOSTNAME=$(az webapp show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --query defaultHostName \
+            --output tsv)
+          echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
+
       - name: API smoke test
-        run: curl --fail --show-error --silent "https://${API_APP_NAME}.azurewebsites.net/health"
+        run: curl --fail --show-error --silent "https://${{ steps.api-host.outputs.hostname }}/health"
 
       - name: Deploy Web
         uses: azure/webapps-deploy@v3
@@ -119,8 +129,18 @@ jobs:
           app-name: learningbank-web
           package: ./src/learning-bank-web/.next/standalone
 
+      - name: Resolve Web default hostname
+        id: web-host
+        run: |
+          HOSTNAME=$(az webapp show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$WEB_APP_NAME" \
+            --query defaultHostName \
+            --output tsv)
+          echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
+
       - name: Web smoke test
-        run: curl --fail --show-error --silent "https://${WEB_APP_NAME}.azurewebsites.net/" > /dev/null
+        run: curl --fail --show-error --silent "https://${{ steps.web-host.outputs.hostname }}/" > /dev/null
 
       - name: Deployment summary
         run: |
