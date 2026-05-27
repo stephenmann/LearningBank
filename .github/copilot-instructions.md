@@ -210,7 +210,7 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 6. Deploy API to `learningbank-api`, smoke test, deploy web to `learningbank-web`, smoke test
 7. Post deployment summary to the workflow run
 
-Deployments must be **idempotent** and **reversible**. Every deploy tags the commit and uploads the build artifact for rollback.
+Deployments should remain **idempotent**. This manual direct-to-production workflow relies on smoke tests and Azure platform rollback options rather than slot swaps or workflow-managed rollback artifacts.
 
 ### Dependency Automation
 - **Dependabot** enabled for `nuget`, `npm`, `github-actions`, and `dockerfile` ecosystems. Weekly cadence. Auto-merge minor/patch updates after CI passes.
