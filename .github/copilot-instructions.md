@@ -42,7 +42,7 @@ When generating code, default to these choices. Do not introduce alternatives wi
 - **Language:** C# on **.NET 10** (latest LTS-track release at time of writing).
 - **Framework:** ASP.NET Core Web API (minimal APIs preferred for endpoints, MVC controllers acceptable for complex resource groups).
 - **Auth:** `Microsoft.AspNetCore.Authentication.OpenIdConnect` + `Microsoft.AspNetCore.Authentication.JwtBearer`. Wire two OIDC schemes (Google, Microsoft) plus a cookie scheme for session.
-- **ORM:** **Entity Framework Core 9** with the provider matching the deployment target (SQLite for local, Azure SQL or PostgreSQL for cloud — see §4).
+- **ORM:** **Entity Framework Core 10** with the provider matching the deployment target (SQLite for local, Azure SQL or PostgreSQL for cloud — see §4).
 - **Validation:** `FluentValidation`.
 - **Logging:** `Serilog` with structured JSON output; sink to console locally and to Application Insights in Azure.
 - **Testing:** `xUnit` + `FluentAssertions` + `Microsoft.AspNetCore.Mvc.Testing` for integration tests.
