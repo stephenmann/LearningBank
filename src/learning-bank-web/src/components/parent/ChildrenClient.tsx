@@ -15,7 +15,7 @@ interface Balance {
 }
 
 interface ChildrenClientProps {
-  children: ChildDto[];
+  childItems: ChildDto[];
   balances: Balance[];
 }
 
@@ -25,7 +25,7 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-export function ChildrenClient({ children, balances }: ChildrenClientProps) {
+export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -57,7 +57,7 @@ export function ChildrenClient({ children, balances }: ChildrenClientProps) {
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        {children.map((child) => {
+        {childItems.map((child) => {
           const bal = getBalance(child.id);
           return (
             <div key={child.id} className="bg-white rounded-[24px] p-5 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)]">
