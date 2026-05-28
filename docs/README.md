@@ -9,6 +9,10 @@ This directory contains implementation-focused component documentation.
 - Infrastructure: [infrastructure.md](infrastructure.md)
 - Web: [web.md](web.md)
 
+## Deployment Infrastructure
+- Azure Bicep templates are in infra/azure.
+- Deployment workflows apply infra/azure/main.bicep before application deployment.
+
 ## Suggested Reading Order
 1. domain.md
 2. infrastructure.md

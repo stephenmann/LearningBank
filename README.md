@@ -8,6 +8,7 @@ Learning Bank is a parent-supervised teaching application that helps children le
 - Domain model and business rules: src/LearningBank.Domain
 - Persistence and EF Core implementation: src/LearningBank.Infrastructure
 - Frontend web app: src/learning-bank-web
+- Azure infrastructure as code (Bicep): infra/azure
 - Tests: tests
 - Component documentation: docs
 

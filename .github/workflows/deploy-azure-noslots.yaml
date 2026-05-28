@@ -19,9 +19,10 @@ jobs:
     environment: prod
 
     env:
-      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP != '' && secrets.AZURE_RESOURCE_GROUP || vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank' }}
       API_APP_NAME: learningbank-api
       WEB_APP_NAME: learningbank-web
+      APP_SERVICE_PLAN_NAME: learningbank-plan
 
     steps:
       - name: Checkout
@@ -48,6 +49,40 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Deploy Azure infrastructure (Bicep)
+        env:
+          API_AUTH_AUTHORITY: ${{ secrets.API_AUTH_AUTHORITY }}
+          API_AUTH_AUDIENCE: ${{ secrets.API_AUTH_AUDIENCE }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+          AZURE_AD_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          API_CONNECTION_STRING: ${{ secrets.API_CONNECTION_STRING }}
+        run: |
+          az deployment group create \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/azure/main.bicep \
+            --parameters \
+              appServicePlanName="$APP_SERVICE_PLAN_NAME" \
+              apiAppName="$API_APP_NAME" \
+              webAppName="$WEB_APP_NAME" \
+              createStagingSlots=false \
+              apiAuthAuthority="$API_AUTH_AUTHORITY" \
+              apiAuthAudience="$API_AUTH_AUDIENCE" \
+              nextAuthUrl="$NEXTAUTH_URL" \
+              nextPublicApiUrl="$NEXT_PUBLIC_API_URL" \
+              googleClientId="$GOOGLE_CLIENT_ID" \
+              googleClientSecret="$GOOGLE_CLIENT_SECRET" \
+              azureAdClientId="$AZURE_AD_CLIENT_ID" \
+              azureAdClientSecret="$AZURE_AD_CLIENT_SECRET" \
+              azureAdTenantId="$AZURE_AD_TENANT_ID" \
+              authSecret="$AUTH_SECRET" \
+              apiConnectionString="$API_CONNECTION_STRING"
+
       - name: Publish API (self-contained linux-x64)
         run: |
           dotnet restore LearningBank.sln
@@ -65,33 +100,6 @@ jobs:
           mkdir -p .next/standalone/.next
           cp -R .next/static .next/standalone/.next/static
           cp -R public .next/standalone/public
-
-      - name: Configure API app settings
-        run: |
-          az webapp config appsettings set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$API_APP_NAME" \
-            --settings \
-              ASPNETCORE_ENVIRONMENT="Production" \
-              Auth__Authority="${{ secrets.API_AUTH_AUTHORITY }}" \
-              Auth__Audience="${{ secrets.API_AUTH_AUDIENCE }}" \
-              Auth__WebAppUrl="${{ secrets.NEXTAUTH_URL }}"
-
-      - name: Configure Web app settings from repository secrets
-        run: |
-          az webapp config appsettings set \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$WEB_APP_NAME" \
-            --settings \
-              NODE_ENV="production" \
-              AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
-              GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
-              GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-              AZURE_AD_CLIENT_ID="${{ secrets.AZURE_AD_CLIENT_ID }}" \
-              AZURE_AD_CLIENT_SECRET="${{ secrets.AZURE_AD_CLIENT_SECRET }}" \
-              AZURE_AD_TENANT_ID="${{ secrets.AZURE_AD_TENANT_ID }}" \
-              NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
-              NEXT_PUBLIC_API_URL="${{ secrets.NEXT_PUBLIC_API_URL }}"
 
       - name: Run EF Core migrations against production DB
         env:

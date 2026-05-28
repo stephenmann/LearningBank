@@ -1,5 +1,51 @@
 # Infrastructure Component Documentation
 
+## Azure IaC (Bicep)
+
+In addition to the C# infrastructure project, Azure hosting resources are defined with Bicep templates.
+
+Location:
+- infra/azure/main.bicep
+- infra/azure/modules/app-service-plan.bicep
+- infra/azure/modules/web-app.bicep
+- infra/azure/modules/web-app-slot.bicep
+
+Provisioned resources:
+- Linux App Service plan
+- API App Service (learningbank-api)
+- Web App Service (learningbank-web)
+- Optional staging slots for API and Web apps
+
+Deployment behavior:
+- .github/workflows/deploy-azure.yaml deploys Bicep with createStagingSlots=true.
+- .github/workflows/deploy-azure-noslots.yaml deploys Bicep with createStagingSlots=false.
+- Deployments are idempotent via az deployment group create.
+
+Primary template parameters:
+- appServicePlanName
+- apiAppName
+- webAppName
+- createStagingSlots
+- slotName
+- appServicePlanSkuName
+- appServicePlanSkuTier
+- apiAuthAuthority
+- apiAuthAudience
+- nextAuthUrl
+- nextPublicApiUrl
+- googleClientId
+- googleClientSecret (secure)
+- azureAdClientId
+- azureAdClientSecret (secure)
+- azureAdTenantId
+- authSecret (secure)
+- apiConnectionString (secure)
+
+Automated runtime configuration:
+- API and Web app settings are declared in Bicep and applied during az deployment group create.
+- Slot workflow applies the same settings to staging slots.
+- No separate az webapp config appsettings set step is required.
+
 ## Scope
 The infrastructure project is in src/LearningBank.Infrastructure and implements persistence and data access for domain contracts using Entity Framework Core.
 

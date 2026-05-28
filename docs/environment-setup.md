@@ -238,23 +238,70 @@ For direct-to-production deployment without slots, use .github/workflows/deploy-
 
 ### What this workflow expects
 - Workflow trigger: deployment is started manually with workflow_dispatch and the deploy job runs only when dispatched from main.
-- Azure App Service resources already exist:
+- Azure resource group already exists and is set in AZURE_RESOURCE_GROUP.
+- Bicep template infra/azure/main.bicep exists in the repository and is deployed by both workflows before app publish.
+- Workflow-managed infrastructure names:
   - API app name: learningbank-api
   - Web app name: learningbank-web
-  - Slot name for both apps: staging
+  - App Service plan name: learningbank-plan
+  - Slot name for staged workflow: staging
 - The GitHub repository has all required Actions secrets configured.
 - Azure OIDC federation is configured so GitHub Actions can sign in without a stored Azure password or publish profile.
 
 ### Required Azure resources (before first deployment)
 1. Create or choose an Azure resource group.
-2. Create App Service apps with the exact names expected by the workflow:
-  - learningbank-api
-  - learningbank-web
-3. Create a staging deployment slot for each app:
-   - learningbank-api/staging
-   - learningbank-web/staging
-4. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
-5. Confirm both production and staging slots have networking rules that allow deployment and smoke tests.
+2. Ensure GitHub OIDC deployment identity has permission to deploy ARM/Bicep resources at the resource group scope.
+3. Ensure your database exists and is reachable from GitHub Actions for EF migrations.
+4. Confirm networking rules allow deployment and smoke tests for created apps and slots.
+
+### Bicep infrastructure modules deployed by workflows
+
+Both deployment workflows run az deployment group create using infra/azure/main.bicep before publishing application artifacts.
+
+Bicep files:
+- infra/azure/main.bicep
+- infra/azure/modules/app-service-plan.bicep
+- infra/azure/modules/web-app.bicep
+- infra/azure/modules/web-app-slot.bicep
+
+Template behavior:
+- Creates or updates one Linux App Service plan.
+- Creates or updates API and Web App Service resources.
+- Creates or updates staging slots only when createStagingSlots=true.
+- Applies API and Web runtime app settings from GitHub Actions secrets via Bicep parameters.
+- Applies both production app settings and staging slot app settings (for slot-based workflow).
+
+How each workflow calls the template:
+- deploy-azure.yaml:
+  - createStagingSlots=true
+  - slotName=staging
+- deploy-azure-noslots.yaml:
+  - createStagingSlots=false
+
+Default template parameters used by workflows:
+- appServicePlanName=learningbank-plan
+- apiAppName=learningbank-api
+- webAppName=learningbank-web
+- slotName=staging (slot workflow only)
+
+App settings automated through Bicep deployment:
+- API app settings:
+  - ASPNETCORE_ENVIRONMENT
+  - Database__Provider
+  - ConnectionStrings__SqlServer
+  - Auth__Authority
+  - Auth__Audience
+  - Auth__WebAppUrl
+- Web app settings:
+  - NODE_ENV
+  - AUTH_SECRET
+  - GOOGLE_CLIENT_ID
+  - GOOGLE_CLIENT_SECRET
+  - AZURE_AD_CLIENT_ID
+  - AZURE_AD_CLIENT_SECRET
+  - AZURE_AD_TENANT_ID
+  - NEXTAUTH_URL
+  - NEXT_PUBLIC_API_URL
 
 ### Configure OIDC login for GitHub Actions (Azure login without client secret)
 
@@ -322,10 +369,14 @@ Azure deployment/auth secrets:
 - AZURE_CLIENT_ID: App Registration client ID used by OIDC login.
 - AZURE_TENANT_ID: Tenant ID for the Azure directory.
 - AZURE_SUBSCRIPTION_ID: Subscription containing the App Services.
-- AZURE_RESOURCE_GROUP: Resource group name containing both apps.
+- AZURE_RESOURCE_GROUP: Optional resource group override.
+  - Resolution order in workflows:
+    - Repository secret AZURE_RESOURCE_GROUP (highest priority)
+    - Repository variable AZURE_RESOURCE_GROUP
+    - Default value LearningBank (fallback)
 
 API runtime/deploy secrets:
-- API_CONNECTION_STRING: SQL connection string used for EF Core migration step.
+- API_CONNECTION_STRING: SQL connection string used for both API runtime app settings and EF Core migration step.
 - API_AUTH_AUTHORITY: OIDC authority that the API validates tokens against.
 - API_AUTH_AUDIENCE: Expected audience for API tokens.
 
@@ -339,6 +390,10 @@ Web runtime secrets (applied to Azure Web App settings during deploy):
 - NEXTAUTH_URL
 - NEXT_PUBLIC_API_URL
 
+Note:
+- These runtime values are applied by the Bicep deployment step in each workflow.
+- The workflows no longer run separate az webapp config appsettings set commands.
+
 ### Secret value guidance for production
 - NEXTAUTH_URL: production web URL, for example https://learningbank-web.azurewebsites.net
 - NEXT_PUBLIC_API_URL: production API base URL including route prefix, for example https://learningbank-api.azurewebsites.net/api/v1
@@ -349,13 +404,14 @@ Web runtime secrets (applied to Azure Web App settings during deploy):
 1. Run CI manually and ensure it succeeds.
 2. Manually dispatch Deploy Azure from main.
 3. Check Azure Login (OIDC) step succeeds.
-4. Check app settings steps succeed for both API and web staging slots.
-5. Check EF migration step succeeds.
-6. Check both smoke tests pass:
+4. Check Deploy Azure infrastructure (Bicep) step succeeds.
+5. Check app settings steps succeed for both API and web staging slots.
+6. Check EF migration step succeeds.
+7. Check both smoke tests pass:
   - API health on staging
   - Web root on staging
-7. Check slot swaps succeed for API and web.
-8. Confirm production endpoints respond after swap.
+8. Check slot swaps succeed for API and web.
+9. Confirm production endpoints respond after swap.
 
 ### Common deployment failures and fixes
 
@@ -378,11 +434,12 @@ Fix:
 
 #### App settings step fails
 Symptoms:
-- az webapp config appsettings set returns authorization or validation errors.
+- Bicep deployment fails while applying app settings values.
 
 Fix:
-- Ensure the GitHub OIDC principal has permission to update app settings.
+- Ensure the GitHub OIDC principal has permission to update App Service configuration in the resource group.
 - Verify all referenced secrets exist and are non-empty.
+- Verify secret values do not contain unexpected line breaks.
 
 #### EF migration fails
 Symptoms:
