@@ -13,6 +13,8 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Azure App Service port binding ────────────────────────────────────────────
+// On Linux App Service, PORT is set by the platform. TLS termination is handled
+// by the Azure front-end, so plain HTTP on the assigned port is correct here.
 var portValue = Environment.GetEnvironmentVariable("PORT");
 if (int.TryParse(portValue, out var port))
 {
