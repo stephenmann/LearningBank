@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Landmark, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { CircleHelp, Landmark, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
 
 interface NavProps {
   role: "Parent" | "Child";
@@ -22,6 +22,12 @@ export function AppNav({ role, displayName, onSignOut }: NavProps) {
         ? "bg-[#9fe870] text-[#0e0f0c]"
         : "text-[#454745] hover:bg-[#e8ebe6] hover:text-[#0e0f0c]"
     }`;
+
+  const handleHelpClick = () => {
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(new CustomEvent("learningbank:penny-help"));
+  };
 
   return (
     <header className="bg-white border-b border-[#e8ebe6] sticky top-0 z-50">
@@ -54,6 +60,16 @@ export function AppNav({ role, displayName, onSignOut }: NavProps) {
 
         {/* User */}
         <div className="flex items-center gap-3">
+          {role === "Child" && (
+            <button
+              onClick={handleHelpClick}
+              className="p-2 rounded-full bg-[#e8ebe6] text-[#454745] hover:bg-[#c5edab] hover:text-[#0e0f0c] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9fe870]"
+              aria-label="Show help from Penny"
+              title="Need help? Ask Penny"
+            >
+              <CircleHelp className="w-4 h-4" aria-hidden />
+            </button>
+          )}
           <span className="text-sm text-[#454745] hidden sm:block">{displayName}</span>
           <button
             onClick={onSignOut}

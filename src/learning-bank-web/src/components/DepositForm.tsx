@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,11 +19,12 @@ type FormData = z.infer<typeof schema>;
 interface DepositFormProps {
   childId: string;
   categories: CategoryDto[];
+  helpMessage?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function DepositForm({ childId, categories, onSuccess, onCancel }: DepositFormProps) {
+export function DepositForm({ childId, categories, helpMessage, onSuccess, onCancel }: DepositFormProps) {
   const [error, setError] = useState<string | null>(null);
   const {
     register,
@@ -57,6 +59,19 @@ export function DepositForm({ childId, categories, onSuccess, onCancel }: Deposi
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+          {helpMessage && (
+            <div className="rounded-[16px] border border-[#9fe870] bg-[#f5fde9] px-3 py-2 flex items-start gap-2">
+              <Image
+                src="/images/learning-bank-mascot-penny.svg"
+                alt="Penny mascot"
+                width={28}
+                height={28}
+                className="shrink-0 animate-[penny-float_2.2s_ease-in-out_infinite]"
+              />
+              <p className="text-sm text-[#163300]">{helpMessage}</p>
+            </div>
+          )}
+
           <div>
             <label htmlFor="dep-amount" className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
               Amount ($)

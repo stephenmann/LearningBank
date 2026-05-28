@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,11 +18,12 @@ interface TransferFormProps {
   childId: string;
   direction: "to-savings" | "to-checking-request";
   maxAmount: number;
+  helpMessage?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function TransferForm({ childId, direction, maxAmount, onSuccess, onCancel }: TransferFormProps) {
+export function TransferForm({ childId, direction, maxAmount, helpMessage, onSuccess, onCancel }: TransferFormProps) {
   const [error, setError] = useState<string | null>(null);
   const {
     register,
@@ -77,6 +79,19 @@ export function TransferForm({ childId, direction, maxAmount, onSuccess, onCance
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+          {helpMessage && (
+            <div className="rounded-[16px] border border-[#9fe870] bg-[#f5fde9] px-3 py-2 flex items-start gap-2">
+              <Image
+                src="/images/learning-bank-mascot-penny.svg"
+                alt="Penny mascot"
+                width={28}
+                height={28}
+                className="shrink-0 animate-[penny-float_2.2s_ease-in-out_infinite]"
+              />
+              <p className="text-sm text-[#163300]">{helpMessage}</p>
+            </div>
+          )}
+
           <div>
             <label htmlFor="tf-amount" className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
               Amount (max ${maxAmount.toFixed(2)})
