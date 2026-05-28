@@ -1,11 +1,45 @@
 import { auth } from "@/lib/auth";
+import Image from "next/image";
 import { redirect } from "next/navigation";
+import { LandingScreenshotGallery } from "@/components/LandingScreenshotGallery";
+
+const screenshotCards = [
+  {
+    title: "Parent dashboard",
+    caption: "Parents can review linked children, balances, and pending transfer requests in one place.",
+    src: "/images/screenshots/ParentDashboard.png",
+    alt: "Parent dashboard screenshot",
+    className: "bg-white",
+  },
+  {
+    title: "Settings",
+    caption: "Family display preferences for currency and dates live alongside category management.",
+    src: "/images/screenshots/Settings.png",
+    alt: "Settings page screenshot",
+    className: "bg-[#e2f6d5]",
+  },
+  {
+    title: "Penny guide",
+    caption: "Penny walks children through the dashboard and explains features the first time they use them.",
+    src: "/images/screenshots/PennyGuide.png",
+    alt: "Penny guide screenshot",
+    className: "bg-[#0e0f0c] text-white",
+  },
+] as const;
 
 export default async function HomePage() {
   const session = await auth();
   if (session) {
     redirect("/dashboard");
   }
+
+  const heroScreenshot = {
+    title: "Child dashboard",
+    caption: "A guided view for children",
+    src: "/images/screenshots/ChildView.png",
+    alt: "Child dashboard screenshot",
+    className: "bg-white",
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#e8ebe6] text-[#0e0f0c]">
@@ -35,8 +69,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-8 px-6 pb-12 pt-6 lg:grid-cols-[1.15fr_1fr] lg:items-start lg:px-10 lg:pt-10">
-        <div>
+      <section className="mx-auto grid w-full max-w-6xl gap-8 px-6 pb-8 pt-6 lg:grid-cols-[1.15fr_.85fr] lg:items-start lg:px-10 lg:pt-10">
+        <div className="max-w-3xl">
           <p className="mb-4 inline-flex rounded-[9999px] bg-[#e2f6d5] px-3 py-1 text-xs font-semibold text-[#163300]">
             Safe money learning for kids
           </p>
@@ -46,7 +80,8 @@ export default async function HomePage() {
           <p className="mt-5 max-w-2xl text-base leading-7 text-[#454745] sm:text-lg">
             Learning Bank helps children practice saving and spending with parent-supervised accounts. Kids
             can make deposits, move money to savings, and request transfers back to checking while parents
-            stay in control.
+            stay in control. The screenshots below show the child experience, the parent dashboard, the family
+            settings page, and Penny&apos;s guided tour.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a
@@ -59,35 +94,30 @@ export default async function HomePage() {
           <p className="mt-4 text-sm text-[#868685]">No real money movement. Designed for guided learning.</p>
         </div>
 
-        <div className="rounded-[24px] border border-[#c5edab] bg-white p-4 shadow-[0_20px_60px_-40px_rgba(14,15,12,0.4)] sm:p-5">
-          <div className="rounded-[16px] bg-[#0e0f0c] px-4 py-3 text-[#9fe870]">
-            <p className="text-xs uppercase tracking-[0.08em] text-[#c5edab]">Live preview placeholder</p>
-            <p className="mt-1 text-lg font-semibold text-white">Child Dashboard Screenshot</p>
-          </div>
-          <div className="mt-4 rounded-[16px] bg-[#e8ebe6] p-4">
-            <div className="mb-3 h-3 w-28 rounded-full bg-[#c5edab]" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[12px] bg-white p-3">
-                <div className="h-2 w-16 rounded-full bg-[#e8ebe6]" />
-                <div className="mt-3 h-7 w-24 rounded-full bg-[#9fe870]" />
-                <div className="mt-3 h-2 w-20 rounded-full bg-[#e8ebe6]" />
-              </div>
-              <div className="rounded-[12px] bg-white p-3">
-                <div className="h-2 w-16 rounded-full bg-[#e8ebe6]" />
-                <div className="mt-3 h-7 w-24 rounded-full bg-[#c5edab]" />
-                <div className="mt-3 h-2 w-20 rounded-full bg-[#e8ebe6]" />
-              </div>
+        <div className="flex min-h-[360px] justify-center lg:justify-end">
+          <div className="relative w-full max-w-[460px] pt-2 sm:pt-4 lg:pt-6">
+            <div className="absolute left-0 top-0 z-20 max-w-[250px] rounded-[28px] border border-[#c5edab] bg-white px-4 py-4 text-[#0e0f0c] shadow-[0_18px_40px_-28px_rgba(14,15,12,0.45)] sm:left-2 lg:left-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#2ead4b]">Hi, I&apos;m Penny</p>
+              <p className="mt-2 text-sm leading-6 text-[#454745]">
+                I help children understand deposits, savings, transfers, transaction history, and good money
+                habits. Tap my guide whenever you want a friendly walkthrough.
+              </p>
+              <div className="absolute -bottom-2 right-14 h-4 w-4 rotate-45 border-b border-r border-[#c5edab] bg-white" />
             </div>
-            <div className="mt-3 rounded-[12px] bg-white p-3">
-              <div className="h-2 w-28 rounded-full bg-[#e8ebe6]" />
-              <div className="mt-3 space-y-2">
-                <div className="h-2 w-full rounded-full bg-[#e8ebe6]" />
-                <div className="h-2 w-4/5 rounded-full bg-[#e8ebe6]" />
-                <div className="h-2 w-3/5 rounded-full bg-[#e8ebe6]" />
-              </div>
-            </div>
+
+            <Image
+              src="/images/learning-bank-mascot-penny.svg"
+              alt="Penny the mascot"
+              width={420}
+              height={420}
+              className="relative z-10 mt-28 ml-auto h-[22rem] w-[22rem] object-contain drop-shadow-[0_18px_30px_rgba(14,15,12,0.18)] sm:mt-24 sm:h-[24rem] sm:w-[24rem] lg:mt-20 lg:h-[26rem] lg:w-[26rem]"
+            />
           </div>
         </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-12 pt-8 lg:px-10 lg:pb-14 lg:pt-10">
+        <LandingScreenshotGallery heroScreenshot={heroScreenshot} gallery={screenshotCards} />
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-10 lg:py-14">
@@ -117,53 +147,16 @@ export default async function HomePage() {
               Parents record real-world withdrawals and children can review them as part of the learning loop.
             </p>
           </article>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-6 pb-14 lg:px-10 lg:pb-20">
-        <div className="grid gap-4 md:grid-cols-3">
-          <article className="rounded-[24px] bg-[#e2f6d5] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#163300]">Product page mock</p>
-            <div className="mt-3 h-44 rounded-[16px] border border-[#c5edab] bg-white p-4">
-              <div className="h-3 w-24 rounded-full bg-[#e8ebe6]" />
-              <div className="mt-4 space-y-2">
-                <div className="h-2 w-full rounded-full bg-[#e8ebe6]" />
-                <div className="h-2 w-5/6 rounded-full bg-[#e8ebe6]" />
-              </div>
-              <div className="mt-6 grid grid-cols-3 gap-2">
-                <div className="h-10 rounded-[10px] bg-[#e8ebe6]" />
-                <div className="h-10 rounded-[10px] bg-[#e8ebe6]" />
-                <div className="h-10 rounded-[10px] bg-[#9fe870]" />
-              </div>
-            </div>
-          </article>
-
-          <article className="rounded-[24px] bg-white p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#868685]">Product page mock</p>
-            <div className="mt-3 h-44 rounded-[16px] border border-[#e8ebe6] bg-[#e8ebe6] p-4">
-              <div className="grid h-full grid-cols-[1fr_1.4fr] gap-3">
-                <div className="rounded-[12px] bg-white" />
-                <div className="rounded-[12px] bg-white p-3">
-                  <div className="h-2 w-12 rounded-full bg-[#e8ebe6]" />
-                  <div className="mt-3 h-10 rounded-[10px] bg-[#9fe870]" />
-                  <div className="mt-3 h-2 w-20 rounded-full bg-[#e8ebe6]" />
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article className="rounded-[24px] bg-[#0e0f0c] p-5 text-white">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#c5edab]">Product page mock</p>
-            <div className="mt-3 h-44 rounded-[16px] border border-[#454745] bg-[#161711] p-4">
-              <div className="h-2 w-16 rounded-full bg-[#454745]" />
-              <div className="mt-4 h-24 rounded-[12px] bg-[#1f211d] p-3">
-                <div className="h-2 w-12 rounded-full bg-[#454745]" />
-                <div className="mt-3 h-8 rounded-[10px] bg-[#9fe870]" />
-              </div>
-            </div>
+          <article className="rounded-[24px] bg-[#0e0f0c] p-6 text-white xl:col-span-4">
+            <h3 className="text-lg font-semibold text-[#c5edab]">Family settings and guided help</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[#dfe6d8]">
+              The family settings page controls currency and date presentation, and Penny can guide children
+              through the dashboard the first time they log in or whenever they need help.
+            </p>
           </article>
         </div>
       </section>
+
     </main>
   );
 }

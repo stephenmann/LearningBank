@@ -48,6 +48,34 @@ flowchart LR
 - Submit deposits and withdrawals for linked children.
 - Review pending savings withdrawal requests.
 - Manage category catalog with archive and child-allowed controls.
+- Configure family display preferences for currency and date formatting.
+
+## Screenshots
+
+### Sign-in page
+![Learning Bank sign-in page](src/learning-bank-web/public/images/screenshots/Login.png)
+
+The sign-in page keeps the entry point simple and routes authenticated users into the correct parent or child experience.
+
+### Child dashboard
+![Learning Bank child dashboard](src/learning-bank-web/public/images/screenshots/ChildView.png)
+
+Children start with a focused dashboard that shows balances, actions, and transaction history in one place.
+
+### Parent dashboard
+![Learning Bank parent dashboard](src/learning-bank-web/public/images/screenshots/ParentDashboard.png)
+
+Parents can review each linked child, balances, and pending transfer activity from the dashboard view.
+
+### Settings page
+![Learning Bank settings page](src/learning-bank-web/public/images/screenshots/Settings.png)
+
+Families can manage currency and date presentation alongside the deposit category catalog.
+
+### Penny guide
+![Learning Bank Penny guide](src/learning-bank-web/public/images/screenshots/PennyGuide.png)
+
+Penny helps children learn the dashboard the first time they log in, and can be reopened whenever they need help.
 
 ## Local Development Setup
 

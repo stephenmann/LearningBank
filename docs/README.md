@@ -19,6 +19,25 @@ This directory contains implementation-focused component documentation.
 3. api.md
 4. web.md
 
+## Visual Reference
+
+These screenshots show the current product surfaces and the child-focused Penny guide.
+
+### Sign-in page
+![Learning Bank sign-in page](../src/learning-bank-web/public/images/screenshots/Login.png)
+
+### Child dashboard
+![Learning Bank child dashboard](../src/learning-bank-web/public/images/screenshots/ChildView.png)
+
+### Parent dashboard
+![Learning Bank parent dashboard](../src/learning-bank-web/public/images/screenshots/ParentDashboard.png)
+
+### Settings page
+![Learning Bank settings page](../src/learning-bank-web/public/images/screenshots/Settings.png)
+
+### Penny guide
+![Learning Bank Penny guide](../src/learning-bank-web/public/images/screenshots/PennyGuide.png)
+
 ## Why this order
 - Domain defines core rules and contracts.
 - Infrastructure implements domain persistence contracts.
