@@ -12,6 +12,13 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Azure App Service port binding ────────────────────────────────────────────
+var portValue = Environment.GetEnvironmentVariable("PORT");
+if (int.TryParse(portValue, out var port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 // ── Serilog ──────────────────────────────────────────────────────────────────
 builder.Host.UseSerilog((ctx, cfg) =>
     cfg.ReadFrom.Configuration(ctx.Configuration)

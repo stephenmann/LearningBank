@@ -121,7 +121,9 @@ jobs:
           echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
 
       - name: API smoke test
-        run: curl --fail --show-error --silent "https://${{ steps.api-host.outputs.hostname }}/health"
+        run: |
+          curl --fail --show-error --silent --location \
+            "https://${{ steps.api-host.outputs.hostname }}/health"
 
       - name: Deploy Web
         uses: azure/webapps-deploy@v3
