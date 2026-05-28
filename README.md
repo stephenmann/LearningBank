@@ -51,7 +51,7 @@ flowchart LR
 ## Local Development Setup
 
 ## Prerequisites
-- .NET SDK 9
+- .NET SDK 10
 - Node.js 22 LTS
 - npm
 

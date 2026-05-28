@@ -39,10 +39,10 @@ These instructions are the source of truth for AI-assisted contributions to this
 When generating code, default to these choices. Do not introduce alternatives without explicit approval.
 
 ### Backend
-- **Language:** C# on **.NET 9** (latest LTS-track release at time of writing).
+- **Language:** C# on **.NET 10** (latest LTS-track release at time of writing).
 - **Framework:** ASP.NET Core Web API (minimal APIs preferred for endpoints, MVC controllers acceptable for complex resource groups).
 - **Auth:** `Microsoft.AspNetCore.Authentication.OpenIdConnect` + `Microsoft.AspNetCore.Authentication.JwtBearer`. Wire two OIDC schemes (Google, Microsoft) plus a cookie scheme for session.
-- **ORM:** **Entity Framework Core 9** with the provider matching the deployment target (SQLite for local, Azure SQL or PostgreSQL for cloud — see §4).
+- **ORM:** **Entity Framework Core 10** with the provider matching the deployment target (SQLite for local, Azure SQL or PostgreSQL for cloud — see §4).
 - **Validation:** `FluentValidation`.
 - **Logging:** `Serilog` with structured JSON output; sink to console locally and to Application Insights in Azure.
 - **Testing:** `xUnit` + `FluentAssertions` + `Microsoft.AspNetCore.Mvc.Testing` for integration tests.
@@ -80,7 +80,7 @@ When generating code, default to these choices. Do not introduce alternatives wi
 │       ├── deploy-azure.yaml         ← manual deploy using staging slots + swap
 │       └── deploy-azure-noslots.yaml ← manual deploy directly to production
 ├── src/
-│   ├── LearningBank.Api/             ← ASP.NET Core Web API (.NET 9)
+│   ├── LearningBank.Api/             ← ASP.NET Core Web API (.NET 10)
 │   ├── LearningBank.Domain/          ← entities, value objects, domain rules
 │   ├── LearningBank.Infrastructure/  ← EF Core, external integrations
 │   └── learning-bank-web/            ← Next.js 15 frontend
@@ -194,7 +194,7 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 
 **`ci.yml`** — runs on manual workflow dispatch:
 1. Checkout
-2. Setup .NET 9, Node 22
+2. Setup .NET 10, Node 22
 3. Restore + build .NET solution
 4. `dotnet test` with coverage
 5. `npm ci` + `npm run lint` + `npm run typecheck` + `npm run test` + `npm run build`
