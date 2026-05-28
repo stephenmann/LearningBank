@@ -19,7 +19,7 @@ jobs:
     environment: prod
 
     env:
-      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP != '' && secrets.AZURE_RESOURCE_GROUP || vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank' }}
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank' }}
       API_APP_NAME: learningbank-api
       WEB_APP_NAME: learningbank-web
       APP_SERVICE_PLAN_NAME: learningbank-plan
@@ -45,21 +45,21 @@ jobs:
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy Azure infrastructure (Bicep)
         env:
-          API_AUTH_AUTHORITY: ${{ secrets.API_AUTH_AUTHORITY }}
-          API_AUTH_AUDIENCE: ${{ secrets.API_AUTH_AUDIENCE }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          API_AUTH_AUTHORITY: ${{ vars.API_AUTH_AUTHORITY }}
+          API_AUTH_AUDIENCE: ${{ vars.API_AUTH_AUDIENCE }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+          AZURE_AD_CLIENT_ID: ${{ vars.AZURE_AD_CLIENT_ID }}
           AZURE_AD_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
-          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+          AZURE_AD_TENANT_ID: ${{ vars.AZURE_AD_TENANT_ID }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           API_CONNECTION_STRING: ${{ secrets.API_CONNECTION_STRING }}
         run: |

@@ -336,19 +336,19 @@ Setup steps:
   - Assign access to: User, group, or service principal.
   - Select the deployment App Registration service principal.
   - Save and wait 5 to 10 minutes for permissions to propagate.
-5. Add required GitHub repository secrets:
-  - GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Repository secrets.
+5. Add required GitHub repository variables:
+  - GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Variables.
   - Create:
     - AZURE_CLIENT_ID
     - AZURE_TENANT_ID
     - AZURE_SUBSCRIPTION_ID
-    - AZURE_RESOURCE_GROUP
+    - AZURE_RESOURCE_GROUP (optional)
 6. Confirm workflow permission and login inputs in deploy-azure.yaml:
   - Top-level permissions include id-token: write and contents: read.
   - Azure login step uses:
-    - client-id: ${{ secrets.AZURE_CLIENT_ID }}
-    - tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-    - subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - client-id: ${{ vars.AZURE_CLIENT_ID }}
+    - tenant-id: ${{ vars.AZURE_TENANT_ID }}
+    - subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 7. Validate OIDC end-to-end:
    - Manually dispatch Deploy Azure from main.
    - Confirm Azure Login (OIDC) succeeds with no client secret or publish profile.
@@ -361,34 +361,41 @@ OIDC troubleshooting quick checks:
 - Ensure the service principal has Contributor (or equivalent required permissions) at the correct scope.
 - If setup was just changed, rerun after propagation delay.
 
-### Required GitHub repository secrets
+### Required GitHub repository variables
 
-Add these under GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Repository secrets.
+Add these under GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Variables.
 
-Azure deployment/auth secrets:
+Azure deployment/auth variables:
 - AZURE_CLIENT_ID: App Registration client ID used by OIDC login.
 - AZURE_TENANT_ID: Tenant ID for the Azure directory.
 - AZURE_SUBSCRIPTION_ID: Subscription containing the App Services.
 - AZURE_RESOURCE_GROUP: Optional resource group override.
   - Resolution order in workflows:
-    - Repository secret AZURE_RESOURCE_GROUP (highest priority)
     - Repository variable AZURE_RESOURCE_GROUP
     - Default value LearningBank (fallback)
 
-API runtime/deploy secrets:
-- API_CONNECTION_STRING: SQL connection string used for both API runtime app settings and EF Core migration step.
+API runtime/deploy variables:
 - API_AUTH_AUTHORITY: OIDC authority that the API validates tokens against.
 - API_AUTH_AUDIENCE: Expected audience for API tokens.
 
-Web runtime secrets (applied to Azure Web App settings during deploy):
-- AUTH_SECRET
+Web runtime variables:
 - GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET
 - AZURE_AD_CLIENT_ID
-- AZURE_AD_CLIENT_SECRET
 - AZURE_AD_TENANT_ID
 - NEXTAUTH_URL
 - NEXT_PUBLIC_API_URL
+
+### Required GitHub repository secrets
+
+Add these under GitHub -> Repository -> Settings -> Secrets and variables -> Actions -> Repository secrets.
+
+API runtime/deploy secrets:
+- API_CONNECTION_STRING: SQL connection string used for both API runtime app settings and EF Core migration step.
+
+Web runtime secrets (applied to Azure Web App settings during deploy):
+- AUTH_SECRET
+- GOOGLE_CLIENT_SECRET
+- AZURE_AD_CLIENT_SECRET
 
 Note:
 - These runtime values are applied by the Bicep deployment step in each workflow.
@@ -405,7 +412,7 @@ Note:
 2. Manually dispatch Deploy Azure from main.
 3. Check Azure Login (OIDC) step succeeds.
 4. Check Deploy Azure infrastructure (Bicep) step succeeds.
-5. Check app settings steps succeed for both API and web staging slots.
+5. Check Bicep app settings application succeeds for API and web staging slots.
 6. Check EF migration step succeeds.
 7. Check both smoke tests pass:
   - API health on staging
