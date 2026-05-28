@@ -22,6 +22,10 @@ public static class TransactionEndpoints
             .RequireAuthorization(AuthHelpers.ParentPolicy)
             .WithName("CreateWithdrawal");
 
+        group.MapDelete("/transactions/{transactionId}", DeleteTransaction)
+            .RequireAuthorization(AuthHelpers.ParentPolicy)
+            .WithName("DeleteTransaction");
+
         group.MapPost("/transfers/checking-to-savings", CheckingToSavings)
             .RequireAuthorization()
             .WithName("CheckingToSavings");
@@ -78,7 +82,7 @@ public static class TransactionEndpoints
         var tx = Transaction.CreateDeposit(
             req.ChildId,
             req.Amount,
-            req.Description,
+            req.Description ?? string.Empty,
             req.CategoryId,
             role == nameof(UserRole.Parent) ? actorId : null);
 
@@ -111,6 +115,54 @@ public static class TransactionEndpoints
         return TypedResults.Created($"/api/v1/transactions/{tx.Id}");
     }
 
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult, ProblemHttpResult>> DeleteTransaction(
+        Guid transactionId,
+        [FromBody] DeleteTransactionRequest req,
+        ClaimsPrincipal user,
+        IUserRepository userRepo,
+        ITransactionRepository txRepo,
+        IAuditLogRepository auditRepo,
+        IUnitOfWork uow,
+        CancellationToken ct)
+    {
+        var parentId = user.GetUserId();
+
+        var original = await txRepo.FindByIdAsync(transactionId, ct);
+        if (original is null)
+            return TypedResults.NotFound();
+
+        if (!await userRepo.IsLinkedToChildAsync(parentId, original.ChildId, ct))
+            return TypedResults.Forbid();
+
+        if (original.Type is TransactionType.TransferDebit or TransactionType.TransferCredit)
+            return TypedResults.Problem("Transfer transactions cannot be deleted from this endpoint.", statusCode: 422);
+
+        if (await txRepo.ExistsByRelatedTransactionIdAsync(original.Id, ct))
+            return TypedResults.Problem("This transaction has already been reversed.", statusCode: 422);
+
+        Transaction reversal;
+        try
+        {
+            reversal = Transaction.CreateReversal(original, parentId, req.Reason);
+        }
+        catch (ArgumentException ex)
+        {
+            return TypedResults.Problem(ex.Message, statusCode: 422);
+        }
+
+        await txRepo.AddAsync(reversal, ct);
+        await auditRepo.AddAsync(AuditLog.Create(
+            parentId,
+            "ReverseTransaction",
+            nameof(Transaction),
+            original.Id,
+            before: $"{original.Type}:{original.Amount:F2}:{original.Description}",
+            after: $"{reversal.Id}:{reversal.Type}:{reversal.Amount:F2}:{reversal.Description}"), ct);
+
+        await uow.SaveChangesAsync(ct);
+        return TypedResults.NoContent();
+    }
+
     private static async Task<Results<Created, ForbidHttpResult, ProblemHttpResult>> CheckingToSavings(
         [FromBody] CreateTransferToSavingsRequest req,
         ClaimsPrincipal user,
@@ -131,7 +183,7 @@ public static class TransactionEndpoints
 
         try
         {
-            var (debit, credit) = AccountService.CheckingToSavings(existing, req.ChildId, req.Amount, req.Description);
+            var (debit, credit) = AccountService.CheckingToSavings(existing, req.ChildId, req.Amount, req.Description ?? string.Empty);
             await txRepo.AddRangeAsync([debit, credit], ct);
             await uow.SaveChangesAsync(ct);
             return TypedResults.Created($"/api/v1/transactions/{debit.Id}");
@@ -150,7 +202,7 @@ public static class TransactionEndpoints
         CancellationToken ct)
     {
         var actorId = user.GetUserId();
-        var transferReq = TransferRequest.Create(actorId, req.Amount, req.Note);
+        var transferReq = TransferRequest.Create(actorId, req.Amount, req.Note ?? string.Empty);
 
         await requestRepo.AddAsync(transferReq, ct);
         await uow.SaveChangesAsync(ct);

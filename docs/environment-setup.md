@@ -83,8 +83,15 @@ Purpose:
 Default local value:
 - common
 
+Other valid local value:
+- consumers
+
 When to use common:
 - Use common if you want to allow both personal Microsoft accounts and work or school accounts.
+
+When to use consumers:
+- Use consumers if your app registration is configured for Microsoft personal accounts only.
+- If you see AADSTS9002346 asking for the /consumers endpoint, set AZURE_AD_TENANT_ID=consumers.
 
 When to use a tenant GUID:
 - Use your Directory (tenant) ID if your app registration is single-tenant or you only want accounts from one Entra tenant.
@@ -498,6 +505,14 @@ Fix:
 - Verify AZURE_AD_TENANT_ID matches the app registration supported account types.
 - If using a single-tenant app, set AZURE_AD_TENANT_ID to your Directory (tenant) ID.
 - If using personal Microsoft accounts, ensure the app registration allows them and set AZURE_AD_TENANT_ID=common.
+
+### AADSTS9002346 requires /consumers endpoint
+Symptoms:
+- Callback error includes AADSTS9002346 and mentions use of the /consumers endpoint.
+
+Fix:
+- Set AZURE_AD_TENANT_ID=consumers in src/learning-bank-web/.env.local.
+- Restart the Next.js dev server after changing environment values.
 
 ## Security Practices
 - Never commit .env.local.

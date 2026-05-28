@@ -9,7 +9,7 @@ import { X } from "lucide-react";
 
 const schema = z.object({
   amount: z.number().positive("Amount must be positive"),
-  description: z.string().min(1, "Description is required").max(500),
+  description: z.string().max(500).optional().default(""),
   categoryId: z.string().uuid("Select a category"),
 });
 
@@ -77,7 +77,7 @@ export function DepositForm({ childId, categories, onSuccess, onCancel }: Deposi
 
           <div>
             <label htmlFor="dep-desc" className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
-              Description
+              Description (optional)
             </label>
             <input
               id="dep-desc"

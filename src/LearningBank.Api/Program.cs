@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,29 +33,75 @@ builder.Host.UseSerilog((ctx, cfg) =>
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // ── Authentication ────────────────────────────────────────────────────────────
-// The frontend (Next.js / NextAuth.js) issues JWTs that this API validates.
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// API accepts provider-issued ID tokens from NextAuth (Google + Microsoft).
+const string GoogleScheme = "GoogleJwt";
+const string MicrosoftScheme = "MicrosoftJwt";
+const string MultiProviderScheme = "MultiProviderJwt";
+
+var googleAuthority = builder.Configuration["Auth:GoogleAuthority"] ?? "https://accounts.google.com";
+var microsoftAuthority = builder.Configuration["Auth:MicrosoftAuthority"]
+    ?? builder.Configuration["Auth:Authority"]
+    ?? "https://login.microsoftonline.com/common/v2.0";
+
+JwtBearerEvents BuildJwtEvents() => new()
+{
+    OnAuthenticationFailed = ctx =>
     {
-        options.Authority = builder.Configuration["Auth:Authority"]
-            ?? builder.Configuration["Auth:WebAppUrl"];
-        options.Audience = builder.Configuration["Auth:Audience"] ?? "learning-bank-api";
+        Log.Warning(ctx.Exception, "JWT authentication failed");
+        return Task.CompletedTask;
+    },
+    OnChallenge = ctx =>
+    {
+        Log.Warning("JWT challenge triggered. Error: {Error}; Description: {Description}", ctx.Error, ctx.ErrorDescription);
+        return Task.CompletedTask;
+    }
+};
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = MultiProviderScheme;
+        options.DefaultChallengeScheme = MultiProviderScheme;
+    })
+    .AddPolicyScheme(MultiProviderScheme, "Select Google or Microsoft JWT", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            var authorization = context.Request.Headers.Authorization.ToString();
+            if (string.IsNullOrWhiteSpace(authorization) || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return MicrosoftScheme;
+
+            var token = authorization["Bearer ".Length..].Trim();
+            try
+            {
+                var jwt = new JsonWebToken(token);
+                var issuer = jwt.Issuer ?? string.Empty;
+
+                if (issuer.Contains("accounts.google.com", StringComparison.OrdinalIgnoreCase))
+                    return GoogleScheme;
+            }
+            catch
+            {
+                // If parsing fails, let a concrete scheme report the validation error.
+            }
+
+            return MicrosoftScheme;
+        };
+    })
+    .AddJwtBearer(GoogleScheme, options =>
+    {
+        options.Authority = googleAuthority;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.TokenValidationParameters.ValidateAudience = false;
         options.TokenValidationParameters.ValidateIssuer = false;
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = ctx =>
-            {
-                Log.Warning(ctx.Exception, "JWT authentication failed");
-                return Task.CompletedTask;
-            },
-            OnChallenge = ctx =>
-            {
-                Log.Warning("JWT challenge triggered. Error: {Error}; Description: {Description}", ctx.Error, ctx.ErrorDescription);
-                return Task.CompletedTask;
-            }
-        };
+        options.Events = BuildJwtEvents();
+    })
+    .AddJwtBearer(MicrosoftScheme, options =>
+    {
+        options.Authority = microsoftAuthority;
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.TokenValidationParameters.ValidateAudience = false;
+        options.TokenValidationParameters.ValidateIssuer = false;
+        options.Events = BuildJwtEvents();
     });
 
 // ── Claims transformation ─────────────────────────────────────────────────────

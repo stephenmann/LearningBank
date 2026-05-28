@@ -26,25 +26,69 @@ public sealed class LearningBankClaimsTransformer : IClaimsTransformation
     {
         if (!principal.Identity?.IsAuthenticated ?? true) return principal;
 
-        var sub = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
-               ?? principal.FindFirst("sub")?.Value;
+         var sub = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+             ?? principal.FindFirst("sub")?.Value
+             ?? principal.FindFirst("oid")?.Value;
         var provider = principal.FindFirst("provider")?.Value
                     ?? principal.FindFirst("iss")?.Value
                     ?? "Unknown";
 
         if (string.IsNullOrEmpty(sub)) return principal;
 
+        var email = principal.FindFirst(ClaimTypes.Email)?.Value
+             ?? principal.FindFirst("email")?.Value
+             ?? principal.FindFirst("preferred_username")?.Value
+             ?? principal.FindFirst(ClaimTypes.Upn)?.Value
+             ?? principal.FindFirst("upn")?.Value
+             ?? $"{sub}@placeholder.local";
+
+        var name = principal.FindFirst(ClaimTypes.Name)?.Value
+            ?? principal.FindFirst("name")?.Value
+            ?? principal.FindFirst("preferred_username")?.Value
+            ?? email;
+
         // Normalize provider name
         provider = provider.Contains("google") ? "Google" : "Microsoft";
 
         var user = await _users.FindByExternalIdAsync(sub, provider);
+        var pendingChildByEmail = await _users.FindPendingChildByEmailAsync(email);
+
+        if (user is not null && pendingChildByEmail is not null && user.Role == UserRole.Parent)
+        {
+            var hasLinkedChildren = await _users.ParentHasLinkedChildrenAsync(user.Id);
+            if (!hasLinkedChildren)
+            {
+                // Compatibility path for accounts auto-created as parent before pending-child linking existed.
+                // We intentionally choose the pending child profile for authorization on this request.
+                user = pendingChildByEmail;
+            }
+        }
+
         if (user is null)
         {
-            var email = principal.FindFirst(ClaimTypes.Email)?.Value ?? "";
-            var name = principal.FindFirst(ClaimTypes.Name)?.Value
-                    ?? principal.FindFirst("name")?.Value
-                    ?? email;
+            if (pendingChildByEmail is not null)
+            {
+                pendingChildByEmail.LinkExternalIdentity(sub, provider);
+                user = pendingChildByEmail;
+                await _uow.SaveChangesAsync();
+            }
+        }
 
+        if (user is null)
+        {
+            var pendingParentByEmail = await _users.FindByEmailAsync(email);
+            if (pendingParentByEmail is not null
+                && pendingParentByEmail.Role == UserRole.Parent
+                && pendingParentByEmail.Provider.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                pendingParentByEmail.LinkExternalIdentity(sub, provider);
+                user = pendingParentByEmail;
+                await _uow.SaveChangesAsync();
+            }
+        }
+
+        if (user is null)
+        {
             try
             {
                 user = User.Create(sub, provider, email, name, UserRole.Parent);

@@ -3,7 +3,12 @@ import Google from "next-auth/providers/google";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 
 const azureTenant = process.env.AZURE_AD_TENANT_ID ?? "common";
-const azureIssuer = `https://login.microsoftonline.com/${azureTenant}/v2.0`;
+const microsoftConsumerTenantId = "9188040d-6c67-4c5b-b112-36a304b66dad";
+const normalizedAzureTenant =
+  azureTenant.toLowerCase() === "consumers"
+    ? microsoftConsumerTenantId
+    : azureTenant;
+const azureIssuer = `https://login.microsoftonline.com/${normalizedAzureTenant}/v2.0`;
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [

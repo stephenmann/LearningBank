@@ -13,6 +13,15 @@ export interface ChildDto {
   isActive: boolean;
 }
 
+export interface ParentAdminDto {
+  id: string;
+  displayName: string;
+  email: string;
+  isActive: boolean;
+  linkedChildrenCount: number;
+  isNewAccount: boolean;
+}
+
 export interface CategoryDto {
   id: string;
   name: string;

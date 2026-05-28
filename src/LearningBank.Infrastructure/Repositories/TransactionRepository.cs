@@ -11,18 +11,28 @@ public sealed class TransactionRepository : ITransactionRepository
     public TransactionRepository(LearningBankDbContext db) => _db = db;
 
     public async Task<IReadOnlyList<Transaction>> GetForChildAsync(Guid childId, CancellationToken ct = default)
-        => await _db.Transactions
+        => (await _db.Transactions
             .Include(t => t.Category)
             .Where(t => t.ChildId == childId)
+            .ToListAsync(ct))
             .OrderByDescending(t => t.PostedAt)
-            .ToListAsync(ct);
+            .ToList();
 
     public async Task<IReadOnlyList<Transaction>> GetForChildAccountAsync(Guid childId, AccountType account, CancellationToken ct = default)
-        => await _db.Transactions
+        => (await _db.Transactions
             .Include(t => t.Category)
             .Where(t => t.ChildId == childId && t.Account == account)
+            .ToListAsync(ct))
             .OrderByDescending(t => t.PostedAt)
-            .ToListAsync(ct);
+            .ToList();
+
+    public Task<Transaction?> FindByIdAsync(Guid transactionId, CancellationToken ct = default)
+        => _db.Transactions
+            .Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == transactionId, ct);
+
+    public Task<bool> ExistsByRelatedTransactionIdAsync(Guid relatedTransactionId, CancellationToken ct = default)
+        => _db.Transactions.AnyAsync(t => t.RelatedTransactionId == relatedTransactionId, ct);
 
     public async Task AddAsync(Transaction transaction, CancellationToken ct = default)
         => await _db.Transactions.AddAsync(transaction, ct);

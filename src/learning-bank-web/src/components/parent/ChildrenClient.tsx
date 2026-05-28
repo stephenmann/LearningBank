@@ -27,7 +27,9 @@ type FormData = z.infer<typeof schema>;
 
 export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showAdminForm, setShowAdminForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adminError, setAdminError] = useState<string | null>(null);
   const router = useRouter();
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -51,6 +53,24 @@ export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
     } else {
       const body = await res.json().catch(() => ({}));
       setError(body.error ?? "Failed to create child account.");
+    }
+  };
+
+  const onSubmitAdmin = async (data: FormData) => {
+    setAdminError(null);
+    const res = await fetch("/api/parents/admins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (res.ok) {
+      setShowAdminForm(false);
+      reset();
+      router.refresh();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setAdminError(body.error ?? "Failed to add parent admin.");
     }
   };
 
@@ -89,13 +109,22 @@ export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
         })}
       </div>
 
-      <button
-        onClick={() => setShowForm(true)}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-[24px] bg-[#9fe870] text-[#0e0f0c] font-semibold hover:bg-[#cdffad] transition-colors"
-      >
-        <UserPlus className="w-4 h-4" aria-hidden />
-        Add Child Account
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-[24px] bg-[#9fe870] text-[#0e0f0c] font-semibold hover:bg-[#cdffad] transition-colors"
+        >
+          <UserPlus className="w-4 h-4" aria-hidden />
+          Add Child Account
+        </button>
+        <button
+          onClick={() => setShowAdminForm(true)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-[24px] bg-[#e8ebe6] text-[#0e0f0c] font-semibold hover:bg-[#c5edab] transition-colors"
+        >
+          <UserPlus className="w-4 h-4" aria-hidden />
+          Add Parent Admin
+        </button>
+      </div>
 
       {showForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" role="dialog" aria-modal>
@@ -131,6 +160,50 @@ export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
                 </button>
                 <button type="submit" disabled={isSubmitting} className="flex-1 py-3 rounded-[24px] bg-[#9fe870] text-[#0e0f0c] font-semibold hover:bg-[#cdffad] transition-colors disabled:opacity-60">
                   {isSubmitting ? "Creating…" : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAdminForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" role="dialog" aria-modal>
+          <div className="bg-white rounded-[24px] p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-xl font-black text-[#0e0f0c] mb-2">Add Parent Admin</h2>
+            <p className="text-sm text-[#454745] mb-6">
+              This parent/admin will be linked to the same children you currently manage.
+            </p>
+            <form onSubmit={handleSubmit(onSubmitAdmin)} noValidate className="flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
+                  Parent&apos;s Name
+                </label>
+                <input
+                  type="text"
+                  {...register("displayName")}
+                  className="w-full rounded-[12px] border border-[#0e0f0c] px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#9fe870] focus:border-transparent"
+                />
+                {errors.displayName && <p className="mt-1 text-sm text-[#d03238]">{errors.displayName.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  {...register("email")}
+                  className="w-full rounded-[12px] border border-[#0e0f0c] px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#9fe870] focus:border-transparent"
+                />
+                {errors.email && <p className="mt-1 text-sm text-[#d03238]">{errors.email.message}</p>}
+              </div>
+              {adminError && <p className="text-sm text-[#d03238]">{adminError}</p>}
+              <div className="flex gap-3 mt-2">
+                <button type="button" onClick={() => setShowAdminForm(false)} className="flex-1 py-3 rounded-[24px] bg-[#e8ebe6] text-[#0e0f0c] font-semibold hover:bg-[#c5edab] transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 rounded-[24px] bg-[#9fe870] text-[#0e0f0c] font-semibold hover:bg-[#cdffad] transition-colors disabled:opacity-60">
+                  {isSubmitting ? "Adding…" : "Add Admin"}
                 </button>
               </div>
             </form>

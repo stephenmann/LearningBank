@@ -18,10 +18,13 @@ export async function apiRequest<T>(
     throw new ApiError(res.status, body || res.statusText);
   }
 
-  // 204 No Content
+  // Some successful API operations return no response body (e.g. 201/204).
   if (res.status === 204) return undefined as T;
 
-  return res.json() as Promise<T>;
+  const raw = await res.text();
+  if (!raw.trim()) return undefined as T;
+
+  return JSON.parse(raw) as T;
 }
 
 export class ApiError extends Error {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using LearningBank.Api.Auth;
 using LearningBank.Api.Dtos;
+using LearningBank.Api.Services;
 using LearningBank.Domain.Entities;
 using LearningBank.Domain.Repositories;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -58,6 +59,9 @@ public static class AccountEndpoints
             return TypedResults.Forbid();
 
         var transactions = await txRepo.GetForChildAccountAsync(childId, account, ct);
+        if (role == nameof(UserRole.Child))
+            transactions = TransactionVisibilityService.ForChildView(transactions);
+
         var balance = transactions.Sum(t => t.Amount);
 
         var dtos = transactions.Select(t => new TransactionDto(

@@ -8,9 +8,16 @@ import {
   getMe,
   getTransferRequests,
 } from "@/lib/server-api";
+import type { ChildDto } from "@/types/api";
 import { DashboardClient } from "@/components/DashboardClient";
+import { ParentChildTabs } from "@/components/ParentChildTabs";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ child?: string }>;
+}) {
+  const params = await searchParams;
   const session = await auth();
   if (!session) redirect("/sign-in");
 
@@ -20,10 +27,10 @@ export default async function DashboardPage() {
       <div className="max-w-md bg-white rounded-[24px] p-6 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.08)]">
         <h1 className="text-xl font-black text-[#0e0f0c] mb-2">You&apos;re signed in, but setup isn&apos;t complete</h1>
         <p className="text-sm text-[#454745] mb-4">
-          We could not resolve your API user profile after authentication. This is usually an Azure tenant/app configuration mismatch.
+          We could not resolve your API user profile after authentication. This is usually an API availability issue or an Azure tenant/app configuration mismatch.
         </p>
         <p className="text-sm text-[#454745] mb-6">
-          Check <span className="font-semibold">AZURE_AD_TENANT_ID</span> and your Entra app registration supported account types, then try again.
+          Ensure the API is running at <span className="font-semibold">http://localhost:5001/health</span>, then check <span className="font-semibold">AZURE_AD_TENANT_ID</span> and your Entra app registration supported account types.
         </p>
         <form
           action={async () => {
@@ -44,12 +51,13 @@ export default async function DashboardPage() {
 
   let activeChildId = user.id;
   let activeChildName = user.displayName;
+  let allChildren: ChildDto[] = [];
 
   if (user.role === "Parent") {
     const children = await getChildren();
-    const firstChild = children[0];
-
-    if (!firstChild) {
+    allChildren = children;
+    
+    if (!children.length) {
       return (
         <div className="max-w-md bg-white rounded-[24px] p-6 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.08)]">
           <h1 className="text-xl font-black text-[#0e0f0c] mb-2">No child account linked yet</h1>
@@ -66,8 +74,12 @@ export default async function DashboardPage() {
       );
     }
 
-    activeChildId = firstChild.id;
-    activeChildName = firstChild.displayName;
+    // Determine which child to display
+    const childFromParam = params.child ? children.find((c) => c.id === params.child) : null;
+    const selectedChild = childFromParam || children[0];
+
+    activeChildId = selectedChild!.id;
+    activeChildName = selectedChild!.displayName;
   }
 
   const [checking, savings, categories, transferRequests] = await Promise.all([
@@ -81,16 +93,25 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-[#0e0f0c]">
-          Hello, {user.displayName.split(" ")[0]}!
-        </h1>
-        <p className="text-sm text-[#454745] mt-1">
-          {user.role === "Parent"
-            ? `Showing ${activeChildName.split(" ")[0]}'s money overview.`
-            : "Here\'s your money overview."}
-        </p>
-      </div>
+      {user.role === "Parent" && allChildren.length > 0 && (
+        <ParentChildTabs
+          childList={allChildren}
+          activeChildId={activeChildId}
+          activeChildName={activeChildName}
+          parentDisplayName={user.displayName}
+        />
+      )}
+
+      {user.role === "Child" && (
+        <div className="mb-6">
+          <h1 className="text-2xl font-black text-[#0e0f0c]">
+            Hello, {user.displayName.split(" ")[0]}!
+          </h1>
+          <p className="text-sm text-[#454745] mt-1">
+            Here&apos;s your money overview.
+          </p>
+        </div>
+      )}
 
       <DashboardClient
         childId={activeChildId}

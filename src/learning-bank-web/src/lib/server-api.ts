@@ -63,3 +63,12 @@ export async function getPendingTransferRequests(): Promise<TransferRequestDto[]
     token
   );
 }
+
+export async function getCoAdminParents(): Promise<any[]> {
+  const token = await getToken();
+  return apiRequest<any[]>(
+    "/parents/admins",
+    {},
+    token
+  ).catch(() => []);
+}

@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getChildren, getMe, getPendingTransferRequests } from "@/lib/server-api";
+import { getChildren, getMe, getPendingTransferRequests, getCoAdminParents } from "@/lib/server-api";
 import { apiRequest } from "@/lib/api-client";
 import { ChildrenClient } from "@/components/parent/ChildrenClient";
 import { PendingRequestsClient } from "@/components/parent/PendingRequestsClient";
@@ -18,9 +18,10 @@ export default async function ChildrenPage() {
   if (!user || user.role !== "Parent") redirect("/dashboard");
 
   const token = await getToken(session);
-  const [children, pendingRequests] = await Promise.all([
+  const [children, pendingRequests, coAdmins] = await Promise.all([
     getChildren(),
     getPendingTransferRequests(),
+    getCoAdminParents(),
   ]);
 
   // Fetch balances for each child
@@ -51,6 +52,34 @@ export default async function ChildrenPage() {
             Pending Transfer Requests ({pendingRequests.length})
           </h2>
           <PendingRequestsClient requests={pendingRequests} />
+        </section>
+      )}
+
+      {coAdmins.length > 0 && (
+        <section>
+          <h2 className="text-base font-black text-[#0e0f0c] mb-3">
+            Co-Admin Parents ({coAdmins.length})
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {coAdmins.map((admin: any) => (
+              <div key={admin.id} className="bg-white rounded-[24px] p-4 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)]">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-[#0e0f0c]">{admin.displayName}</p>
+                    <p className="text-xs text-[#868685]">{admin.email}</p>
+                  </div>
+                  {!admin.isActive && (
+                    <span className="rounded-full bg-[#d03238]/10 text-[#d03238] text-xs font-semibold px-2 py-0.5">
+                      Inactive
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[#454745] mt-2">
+                  Manages {admin.linkedChildrenCount} shared {admin.linkedChildrenCount === 1 ? 'child' : 'children'}
+                </p>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

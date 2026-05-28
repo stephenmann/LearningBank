@@ -20,6 +20,9 @@ public record CreateWithdrawalRequest(
     decimal Amount,
     string Description);
 
+public record DeleteTransactionRequest(
+    string Reason);
+
 public record AccountSummaryDto(
     string Balance,
     IReadOnlyList<TransactionDto> Transactions);

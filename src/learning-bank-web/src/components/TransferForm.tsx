@@ -8,7 +8,7 @@ import { X } from "lucide-react";
 
 const schema = z.object({
   amount: z.number().positive("Amount must be positive"),
-  description: z.string().min(1, "Description is required").max(500),
+  description: z.string().max(500).optional().default(""),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -97,7 +97,7 @@ export function TransferForm({ childId, direction, maxAmount, onSuccess, onCance
 
           <div>
             <label htmlFor="tf-desc" className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
-              {direction === "to-checking-request" ? "Note (optional)" : "Description"}
+              {direction === "to-checking-request" ? "Note (optional)" : "Description (optional)"}
             </label>
             <input
               id="tf-desc"

@@ -47,4 +47,25 @@ public sealed class User
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("DisplayName is required.", nameof(name));
         DisplayName = name;
     }
+
+    /// <summary>
+    /// Binds a placeholder user (Provider=Pending) to a real identity provider subject.
+    /// </summary>
+    public void LinkExternalIdentity(string externalId, string provider)
+    {
+        if (string.IsNullOrWhiteSpace(externalId)) throw new ArgumentException("ExternalId is required.", nameof(externalId));
+        if (string.IsNullOrWhiteSpace(provider)) throw new ArgumentException("Provider is required.", nameof(provider));
+        if (provider.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Provider cannot be Pending.", nameof(provider));
+
+        // Idempotent when already linked to the same identity.
+        if (ExternalId == externalId && Provider == provider)
+            return;
+
+        if (!Provider.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("External identity is already linked.");
+
+        ExternalId = externalId;
+        Provider = provider;
+    }
 }

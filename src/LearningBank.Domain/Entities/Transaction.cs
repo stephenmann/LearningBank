@@ -140,4 +140,41 @@ public sealed class Transaction
         };
         return (debit, credit);
     }
+
+    /// <summary>
+    /// Creates a compensating transaction that reverses a posted non-transfer transaction.
+    /// This preserves immutability by appending a new entry instead of editing/deleting.
+    /// </summary>
+    public static Transaction CreateReversal(
+        Transaction original,
+        Guid enteredByParentId,
+        string reason)
+    {
+        if (enteredByParentId == Guid.Empty)
+            throw new ArgumentException("Parent ID is required.", nameof(enteredByParentId));
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Reason is required.", nameof(reason));
+
+        var reversalType = original.Type switch
+        {
+            TransactionType.Deposit => TransactionType.Withdrawal,
+            TransactionType.Withdrawal => TransactionType.Deposit,
+            _ => throw new ArgumentException("Only deposit and withdrawal transactions can be reversed.", nameof(original))
+        };
+
+        return new Transaction
+        {
+            Id = Guid.NewGuid(),
+            ChildId = original.ChildId,
+            Account = original.Account,
+            Type = reversalType,
+            Amount = -original.Amount,
+            Description = $"Reversal of {original.Id}: {reason.Trim()}",
+            CategoryId = original.CategoryId,
+            RelatedTransactionId = original.Id,
+            EnteredByParentId = enteredByParentId,
+            PostedAt = DateTimeOffset.UtcNow
+        };
+    }
 }

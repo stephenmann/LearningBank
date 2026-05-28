@@ -16,3 +16,15 @@ public record ChildDto(
 public record CreateChildRequest(
     string DisplayName,
     string Email);
+
+public record CreateParentAdminRequest(
+    string DisplayName,
+    string Email);
+
+public record ParentAdminDto(
+    Guid Id,
+    string DisplayName,
+    string Email,
+    bool IsActive,
+    int LinkedChildrenCount,
+    bool IsNewAccount);
