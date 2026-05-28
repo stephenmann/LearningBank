@@ -41,6 +41,11 @@ public sealed class UserRepository : IUserRepository
             .Where(l => l.ParentId == parentId)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ChildLink>> GetChildLinksForChildAsync(Guid childId, CancellationToken ct = default)
+        => await _db.ChildLinks
+            .Where(l => l.ChildId == childId)
+            .ToListAsync(ct);
+
     public async Task<IReadOnlyList<User>> GetChildrenForParentAsync(Guid parentId, CancellationToken ct = default)
     {
         var childIds = await _db.ChildLinks
@@ -72,6 +77,46 @@ public sealed class UserRepository : IUserRepository
         return await _db.Users
             .Where(u => coAdminParentIds.Contains(u.Id) && u.IsActive)
             .ToListAsync(ct);
+    }
+
+    public async Task<string> GetPreferenceScopeKeyAsync(Guid actorId, UserRole actorRole, CancellationToken ct = default)
+    {
+        var links = await _db.ChildLinks
+            .Select(l => new { l.ParentId, l.ChildId })
+            .ToListAsync(ct);
+
+        if (links.Count == 0)
+            return actorRole == UserRole.Parent ? $"parent:{actorId}" : $"child:{actorId}";
+
+        var parentIds = new HashSet<Guid>();
+        var childIds = new HashSet<Guid>();
+
+        if (actorRole == UserRole.Parent)
+            parentIds.Add(actorId);
+        else
+            childIds.Add(actorId);
+
+        var changed = true;
+        while (changed)
+        {
+            changed = false;
+
+            foreach (var link in links)
+            {
+                if (parentIds.Contains(link.ParentId) && childIds.Add(link.ChildId))
+                    changed = true;
+
+                if (childIds.Contains(link.ChildId) && parentIds.Add(link.ParentId))
+                    changed = true;
+            }
+        }
+
+        if (parentIds.Count == 0 && childIds.Count == 0)
+            return actorRole == UserRole.Parent ? $"parent:{actorId}" : $"child:{actorId}";
+
+        var parentPart = string.Join(",", parentIds.OrderBy(id => id).Select(id => id.ToString("N")));
+        var childPart = string.Join(",", childIds.OrderBy(id => id).Select(id => id.ToString("N")));
+        return $"family:p[{parentPart}]|c[{childPart}]";
     }
 
     public async Task AddAsync(User user, CancellationToken ct = default)

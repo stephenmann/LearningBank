@@ -30,7 +30,7 @@ export function AppNav({ role, displayName, onSignOut }: NavProps) {
   };
 
   return (
-    <header className="bg-white border-b border-[#e8ebe6] sticky top-0 z-50">
+    <header className="bg-white border-b border-[#c8d1c4] sticky top-0 z-50">
       <div className="max-w-[1200px] mx-auto px-6 h-14 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 font-black text-[#0e0f0c]">
@@ -50,9 +50,9 @@ export function AppNav({ role, displayName, onSignOut }: NavProps) {
                 <Users className="w-4 h-4" aria-hidden />
                 Children
               </Link>
-              <Link href="/parent/categories" className={linkClass("/parent/categories")}>
+              <Link href="/parent/settings" className={linkClass("/parent/settings")}>
                 <Settings className="w-4 h-4" aria-hidden />
-                Categories
+                Settings
               </Link>
             </>
           )}

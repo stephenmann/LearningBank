@@ -7,6 +7,7 @@ import { UserPlus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useUserPreferences } from "@/lib/user-preferences";
 
 interface Balance {
   childId: string;
@@ -31,6 +32,7 @@ export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [adminError, setAdminError] = useState<string | null>(null);
   const router = useRouter();
+  const { formatCurrency } = useUserPreferences();
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -96,11 +98,11 @@ export function ChildrenClient({ childItems, balances }: ChildrenClientProps) {
                 <div className="flex gap-4 mt-3 pt-3 border-t border-[#e8ebe6]">
                   <div>
                     <p className="text-xs text-[#868685]">Checking</p>
-                    <p className="font-black tabular-nums text-[#0e0f0c]">${parseFloat(bal.checking).toFixed(2)}</p>
+                    <p className="font-black tabular-nums text-[#0e0f0c]">{formatCurrency(parseFloat(bal.checking))}</p>
                   </div>
                   <div>
                     <p className="text-xs text-[#868685]">Savings</p>
-                    <p className="font-black tabular-nums text-[#0e0f0c]">${parseFloat(bal.savings).toFixed(2)}</p>
+                    <p className="font-black tabular-nums text-[#0e0f0c]">{formatCurrency(parseFloat(bal.savings))}</p>
                   </div>
                 </div>
               )}

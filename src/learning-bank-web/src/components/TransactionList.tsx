@@ -1,5 +1,6 @@
 import { type TransactionDto } from "@/types/api";
 import { ArrowDownLeft, ArrowUpRight, ArrowRightLeft } from "lucide-react";
+import { useUserPreferences } from "@/lib/user-preferences";
 
 interface TransactionListProps {
   transactions: TransactionDto[];
@@ -34,10 +35,14 @@ const amountClass = (type: TransactionDto["type"]) => {
   return "text-[#d03238] tabular-nums";
 };
 
-const formatAmount = (amount: string, type: TransactionDto["type"]) => {
+const formatAmount = (
+  amount: string,
+  type: TransactionDto["type"],
+  formatCurrency: (value: number | string) => string
+) => {
   const abs = Math.abs(parseFloat(amount));
   const prefix = type === "Deposit" || type === "TransferCredit" ? "+" : "−";
-  return `${prefix}$${abs.toFixed(2)}`;
+  return `${prefix}${formatCurrency(abs)}`;
 };
 
 const isReversalEntry = (tx: TransactionDto) =>
@@ -63,6 +68,7 @@ export function TransactionList({
   onDelete,
   deletingTransactionId,
 }: TransactionListProps) {
+  const { formatCurrency, formatDate } = useUserPreferences();
   const reversedOriginalIds = getReversedOriginalIds(transactions);
 
   if (transactions.length === 0) {
@@ -126,10 +132,10 @@ export function TransactionList({
               )}
             </td>
             <td className={`py-3 hidden md:table-cell ${isReversedOriginal ? "text-[#d03238] line-through decoration-[#d03238]" : "text-[#454745]"}`}>
-              {new Date(tx.postedAt).toLocaleDateString()}
+              {formatDate(tx.postedAt)}
             </td>
             <td className={`py-3 text-right font-semibold ${isReversedOriginal ? "text-[#d03238] line-through decoration-[#d03238]" : amountClass(tx.type)}`}>
-              {formatAmount(tx.amount, tx.type)}
+              {formatAmount(tx.amount, tx.type, formatCurrency)}
             </td>
             {onDelete && (
               <td className="py-3 pl-3 text-right">

@@ -1,0 +1,23 @@
+<svg width="320" height="320" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+  <g fill="#d8efcc" fill-opacity="0.2" font-family="Inter, Arial, sans-serif" font-weight="600">
+    <text x="22" y="48" font-size="18" transform="rotate(-8 22 48)">$</text>
+    <text x="96" y="44" font-size="28" transform="rotate(10 96 44)">€</text>
+    <text x="170" y="58" font-size="14" transform="rotate(-6 170 58)">£</text>
+    <text x="242" y="52" font-size="24" transform="rotate(7 242 52)">¥</text>
+
+    <text x="48" y="122" font-size="32" transform="rotate(-10 48 122)">₹</text>
+    <text x="132" y="116" font-size="16" transform="rotate(6 132 116)">₩</text>
+    <text x="202" y="128" font-size="22" transform="rotate(-7 202 128)">₽</text>
+    <text x="276" y="120" font-size="13" transform="rotate(9 276 120)">₺</text>
+
+    <text x="18" y="196" font-size="12" transform="rotate(8 18 196)">₴</text>
+    <text x="84" y="200" font-size="26" transform="rotate(-9 84 200)">₦</text>
+    <text x="164" y="192" font-size="18" transform="rotate(5 164 192)">฿</text>
+    <text x="236" y="206" font-size="30" transform="rotate(-7 236 206)">₫</text>
+
+    <text x="38" y="274" font-size="22" transform="rotate(7 38 274)">₪</text>
+    <text x="116" y="278" font-size="14" transform="rotate(-10 116 278)">₱</text>
+    <text x="188" y="270" font-size="34" transform="rotate(8 188 270)">$</text>
+    <text x="280" y="282" font-size="17" transform="rotate(-5 280 282)">₲</text>
+  </g>
+</svg>

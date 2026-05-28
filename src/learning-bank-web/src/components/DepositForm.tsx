@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useState } from "react";
 import type { CategoryDto } from "@/types/api";
 import { X } from "lucide-react";
+import { useUserPreferences } from "@/lib/user-preferences";
 
 const schema = z.object({
   amount: z.number().positive("Amount must be positive"),
@@ -26,6 +27,7 @@ interface DepositFormProps {
 
 export function DepositForm({ childId, categories, helpMessage, onSuccess, onCancel }: DepositFormProps) {
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useUserPreferences();
   const {
     register,
     handleSubmit,
@@ -74,7 +76,7 @@ export function DepositForm({ childId, categories, helpMessage, onSuccess, onCan
 
           <div>
             <label htmlFor="dep-amount" className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
-              Amount ($)
+              Amount ({currency})
             </label>
             <input
               id="dep-amount"

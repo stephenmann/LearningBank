@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useUserPreferences } from "@/lib/user-preferences";
 
 const schema = z.object({
   amount: z.number().positive("Amount must be positive"),
@@ -25,6 +26,9 @@ interface TransferFormProps {
 
 export function TransferForm({ childId, direction, maxAmount, helpMessage, onSuccess, onCancel }: TransferFormProps) {
   const [error, setError] = useState<string | null>(null);
+  const { formatCurrency } = useUserPreferences();
+
+  const maxLabel = formatCurrency(maxAmount);
   const {
     register,
     handleSubmit,
@@ -35,7 +39,7 @@ export function TransferForm({ childId, direction, maxAmount, helpMessage, onSuc
         amount: z
           .number()
           .positive("Amount must be positive")
-          .max(maxAmount, `Maximum available: $${maxAmount.toFixed(2)}`),
+          .max(maxAmount, `Maximum available: ${maxLabel}`),
       })
     ),
   });
@@ -94,7 +98,7 @@ export function TransferForm({ childId, direction, maxAmount, helpMessage, onSuc
 
           <div>
             <label htmlFor="tf-amount" className="block text-sm font-semibold text-[#0e0f0c] mb-1.5">
-              Amount (max ${maxAmount.toFixed(2)})
+              Amount (max {maxLabel})
             </label>
             <input
               id="tf-amount"

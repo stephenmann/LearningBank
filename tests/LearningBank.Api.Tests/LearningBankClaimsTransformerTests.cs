@@ -97,8 +97,17 @@ public sealed class LearningBankClaimsTransformerTests
         public Task<IReadOnlyList<ChildLink>> GetChildLinksForParentAsync(Guid parentId, CancellationToken ct = default)
             => Task.FromResult((IReadOnlyList<ChildLink>)[]);
 
+        public Task<IReadOnlyList<ChildLink>> GetChildLinksForChildAsync(Guid childId, CancellationToken ct = default)
+            => Task.FromResult((IReadOnlyList<ChildLink>)[]);
+
         public Task<IReadOnlyList<User>> GetChildrenForParentAsync(Guid parentId, CancellationToken ct = default)
             => Task.FromResult((IReadOnlyList<User>)[]);
+
+        public Task<IReadOnlyList<User>> GetCoAdminParentsAsync(Guid parentId, CancellationToken ct = default)
+            => Task.FromResult((IReadOnlyList<User>)[]);
+
+        public Task<string> GetPreferenceScopeKeyAsync(Guid actorId, UserRole actorRole, CancellationToken ct = default)
+            => Task.FromResult($"test:{actorId:N}");
 
         public Task AddAsync(User user, CancellationToken ct = default)
         {

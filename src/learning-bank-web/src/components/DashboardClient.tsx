@@ -9,6 +9,7 @@ import { DepositForm } from "@/components/DepositForm";
 import { TransferForm } from "@/components/TransferForm";
 import type { AccountSummaryDto, CategoryDto, TransferRequestDto } from "@/types/api";
 import { hasSeenPennyFeature, markPennyFeatureSeen, type PennyGuideFeature } from "@/lib/penny-guide";
+import { useUserPreferences } from "@/lib/user-preferences";
 import { PiggyBank, Plus, ArrowRightLeft, Clock, Check, X } from "lucide-react";
 
 type Modal = "deposit" | "transfer-to-savings" | "request-savings" | null;
@@ -54,6 +55,7 @@ export function DashboardClient({
 
   const router = useRouter();
   const isChild = role === "Child";
+  const { formatCurrency } = useUserPreferences();
 
   const refresh = () => {
     setModal(null);
@@ -408,7 +410,7 @@ export function DashboardClient({
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[#0e0f0c]">
-                      Request for <span className="font-black tabular-nums">${parseFloat(req.amount).toFixed(2)}</span> from savings
+                      Request for <span className="font-black tabular-nums">{formatCurrency(parseFloat(req.amount))}</span> from savings
                     </p>
                     {req.note && (
                       <p className="text-xs text-[#454745] italic mt-0.5">&quot;{req.note}&quot;</p>

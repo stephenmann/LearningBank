@@ -43,7 +43,14 @@ public static class UserEndpoints
         var id = user.GetUserId();
         var dbUser = await userRepo.FindByIdAsync(id, ct);
         if (dbUser is null) return TypedResults.NotFound();
-        return TypedResults.Ok(new UserDto(dbUser.Id, dbUser.DisplayName, dbUser.Email, dbUser.Role.ToString(), dbUser.IsActive));
+        var preferenceScopeId = await userRepo.GetPreferenceScopeKeyAsync(dbUser.Id, dbUser.Role, ct);
+        return TypedResults.Ok(new UserDto(
+            dbUser.Id,
+            dbUser.DisplayName,
+            dbUser.Email,
+            dbUser.Role.ToString(),
+            dbUser.IsActive,
+            preferenceScopeId));
     }
 
     private static async Task<Ok<IReadOnlyList<ChildDto>>> GetChildren(
@@ -169,7 +176,7 @@ public static class UserEndpoints
 
         var dtos = coAdmins.Select(admin =>
         {
-            var adminChildCount = childLinks.Count(l => l.ChildId != null);
+            var adminChildCount = childLinks.Count;
             return new ParentAdminDto(admin.Id, admin.DisplayName, admin.Email, admin.IsActive, adminChildCount, false);
         }).ToList();
 

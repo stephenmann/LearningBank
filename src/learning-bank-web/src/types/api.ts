@@ -4,6 +4,7 @@ export interface UserDto {
   email: string;
   role: "Parent" | "Child";
   isActive: boolean;
+  preferenceScopeId: string;
 }
 
 export interface ChildDto {

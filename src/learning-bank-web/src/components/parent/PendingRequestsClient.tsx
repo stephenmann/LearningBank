@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TransferRequestDto } from "@/types/api";
 import { Check, X } from "lucide-react";
+import { useUserPreferences } from "@/lib/user-preferences";
 
 interface PendingRequestsClientProps {
   requests: TransferRequestDto[];
@@ -13,6 +14,7 @@ export function PendingRequestsClient({ requests }: PendingRequestsClientProps) 
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { formatCurrency, formatDate } = useUserPreferences();
 
   const review = async (id: string, approve: boolean) => {
     setProcessing(id);
@@ -42,14 +44,14 @@ export function PendingRequestsClient({ requests }: PendingRequestsClientProps) 
             <p className="font-semibold text-[#0e0f0c]">{req.childDisplayName}</p>
             <p className="text-sm text-[#454745]">
               Requesting{" "}
-              <span className="font-black tabular-nums">${parseFloat(req.amount).toFixed(2)}</span>
+              <span className="font-black tabular-nums">{formatCurrency(parseFloat(req.amount))}</span>
               {" "}from Savings
             </p>
             {req.note && (
               <p className="text-xs text-[#868685] mt-0.5 italic">&quot;{req.note}&quot;</p>
             )}
             <p className="text-xs text-[#868685] mt-0.5">
-              {new Date(req.requestedAt).toLocaleDateString()}
+              {formatDate(req.requestedAt)}
             </p>
           </div>
           <div className="flex items-center gap-2">

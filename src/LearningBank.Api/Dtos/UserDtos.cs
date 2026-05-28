@@ -5,7 +5,8 @@ public record UserDto(
     string DisplayName,
     string Email,
     string Role,
-    bool IsActive);
+    bool IsActive,
+    string PreferenceScopeId);
 
 public record ChildDto(
     Guid Id,
