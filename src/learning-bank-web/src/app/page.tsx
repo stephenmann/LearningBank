@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { LandingScreenshotGallery } from "@/components/LandingScreenshotGallery";
+import { PennyHeroCallout } from "@/components/PennyHeroCallout";
 
 const screenshotCards = [
   {
@@ -94,26 +94,7 @@ export default async function HomePage() {
           <p className="mt-4 text-sm text-[#868685]">No real money movement. Designed for guided learning.</p>
         </div>
 
-        <div className="flex min-h-[360px] justify-center lg:justify-end">
-          <div className="relative w-full max-w-[460px] pt-2 sm:pt-4 lg:pt-6">
-            <div className="absolute left-0 top-0 z-20 max-w-[250px] rounded-[28px] border border-[#c5edab] bg-white px-4 py-4 text-[#0e0f0c] shadow-[0_18px_40px_-28px_rgba(14,15,12,0.45)] sm:left-2 lg:left-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#2ead4b]">Hi, I&apos;m Penny</p>
-              <p className="mt-2 text-sm leading-6 text-[#454745]">
-                I help children understand deposits, savings, transfers, transaction history, and good money
-                habits. Tap my guide whenever you want a friendly walkthrough.
-              </p>
-              <div className="absolute -bottom-2 right-14 h-4 w-4 rotate-45 border-b border-r border-[#c5edab] bg-white" />
-            </div>
-
-            <Image
-              src="/images/learning-bank-mascot-penny.svg"
-              alt="Penny the mascot"
-              width={420}
-              height={420}
-              className="relative z-10 mt-28 ml-auto h-[22rem] w-[22rem] object-contain drop-shadow-[0_18px_30px_rgba(14,15,12,0.18)] sm:mt-24 sm:h-[24rem] sm:w-[24rem] lg:mt-20 lg:h-[26rem] lg:w-[26rem]"
-            />
-          </div>
-        </div>
+        <PennyHeroCallout />
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 pb-12 pt-8 lg:px-10 lg:pb-14 lg:pt-10">

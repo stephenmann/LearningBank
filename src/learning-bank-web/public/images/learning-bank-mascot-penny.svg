@@ -66,11 +66,15 @@
   <!-- Soft floor shadow (gives Penny a "hovering" feel) -->
   <ellipse cx="200" cy="412" rx="110" ry="14" fill="url(#groundShadow)"/>
 
-  <!-- Sparkle accents around the mascot for fun energy -->
-  <g opacity="0.9">
+  <g id="layer-fx-stars" data-layer="fx-stars" opacity="0.9">
+    <!-- Star/sparkle accents around the mascot -->
     <path d="M 60 90 l 4 -10 l 4 10 l 10 4 l -10 4 l -4 10 l -4 -10 l -10 -4 z" fill="url(#brandGrad)"/>
     <path d="M 340 130 l 3 -7 l 3 7 l 7 3 l -7 3 l -3 7 l -3 -7 l -7 -3 z" fill="#FBBF24"/>
     <path d="M 350 280 l 3 -7 l 3 7 l 7 3 l -7 3 l -3 7 l -3 -7 l -7 -3 z" fill="url(#brandGrad)"/>
+  </g>
+
+  <g id="layer-fx-dots" data-layer="fx-dots" opacity="0.9">
+    <!-- Dot accents around the mascot -->
     <circle cx="50" cy="240" r="4" fill="#A78BFA"/>
     <circle cx="55" cy="340" r="3" fill="#00D4FF"/>
     <circle cx="345" cy="380" r="3.5" fill="#FBBF24"/>
@@ -79,41 +83,47 @@
   <g filter="url(#mascotShadow)">
 
     <!-- ===== LEGS / FEET (drawn behind body) ===== -->
-    <!-- Left leg -->
-    <path d="M 165 360 q -4 18 -6 30 q -2 8 8 10 l 18 0 q 8 0 8 -8 l 0 -28 z"
-          fill="#0A2540"/>
-    <!-- Left sneaker -->
-    <ellipse cx="172" cy="402" rx="22" ry="10" fill="#FFFFFF"/>
-    <ellipse cx="172" cy="402" rx="22" ry="10" fill="none" stroke="#0A2540" stroke-width="2"/>
-    <path d="M 152 400 q 10 -3 20 0 q 10 3 20 0" fill="none" stroke="#635BFF" stroke-width="2.5" stroke-linecap="round"/>
+        <g id="layer-left-leg" data-layer="left-leg">
+      <!-- Left leg -->
+      <path d="M 165 360 q -4 18 -6 30 q -2 8 8 10 l 18 0 q 8 0 8 -8 l 0 -28 z"
+        fill="#0A2540"/>
+      <!-- Left sneaker -->
+      <ellipse cx="172" cy="402" rx="22" ry="10" fill="#FFFFFF"/>
+      <ellipse cx="172" cy="402" rx="22" ry="10" fill="none" stroke="#0A2540" stroke-width="2"/>
+      <path d="M 152 400 q 10 -3 20 0 q 10 3 20 0" fill="none" stroke="#635BFF" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
 
-    <!-- Right leg -->
-    <path d="M 207 360 q 4 18 6 30 q 2 8 -8 10 l -18 0 q -8 0 -8 -8 l 0 -28 z"
-          fill="#0A2540"/>
-    <!-- Right sneaker -->
-    <ellipse cx="228" cy="402" rx="22" ry="10" fill="#FFFFFF"/>
-    <ellipse cx="228" cy="402" rx="22" ry="10" fill="none" stroke="#0A2540" stroke-width="2"/>
-    <path d="M 208 400 q 10 -3 20 0 q 10 3 20 0" fill="none" stroke="#635BFF" stroke-width="2.5" stroke-linecap="round"/>
+        <g id="layer-right-leg" data-layer="right-leg">
+      <!-- Right leg -->
+          <path d="M 223 360 q 4 18 6 30 q 2 8 -8 10 l -18 0 q -8 0 -8 -8 l 0 -28 z"
+        fill="#0A2540"/>
+      <!-- Right sneaker -->
+      <ellipse cx="228" cy="402" rx="22" ry="10" fill="#FFFFFF"/>
+      <ellipse cx="228" cy="402" rx="22" ry="10" fill="none" stroke="#0A2540" stroke-width="2"/>
+      <path d="M 208 400 q 10 -3 20 0 q 10 3 20 0" fill="none" stroke="#635BFF" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
 
-    <!-- ===== COIN BODY ===== -->
-    <!-- Outer rim -->
-    <circle cx="200" cy="220" r="135" fill="url(#coinBody)"/>
-    <!-- Inner face -->
-    <circle cx="200" cy="220" r="118" fill="url(#coinFace)"/>
-    <!-- Decorative rim notches (subtle, like a real coin edge) -->
-    <g stroke="#D97706" stroke-width="1.4" opacity="0.55">
-      <line x1="200" y1="92"  x2="200" y2="100"/>
-      <line x1="200" y1="340" x2="200" y2="348"/>
-      <line x1="72"  y1="220" x2="80"  y2="220"/>
-      <line x1="320" y1="220" x2="328" y2="220"/>
-      <line x1="110" y1="130" x2="116" y2="136"/>
-      <line x1="284" y1="304" x2="290" y2="310"/>
-      <line x1="290" y1="130" x2="284" y2="136"/>
-      <line x1="116" y1="304" x2="110" y2="310"/>
+    <g id="layer-body" data-layer="body">
+      <!-- ===== COIN BODY ===== -->
+      <!-- Outer rim -->
+      <circle cx="200" cy="220" r="135" fill="url(#coinBody)"/>
+      <!-- Inner face -->
+      <circle cx="200" cy="220" r="118" fill="url(#coinFace)"/>
+      <!-- Decorative rim notches (subtle, like a real coin edge) -->
+      <g stroke="#D97706" stroke-width="1.4" opacity="0.55">
+        <line x1="200" y1="92"  x2="200" y2="100"/>
+        <line x1="200" y1="340" x2="200" y2="348"/>
+        <line x1="72"  y1="220" x2="80"  y2="220"/>
+        <line x1="320" y1="220" x2="328" y2="220"/>
+        <line x1="110" y1="130" x2="116" y2="136"/>
+        <line x1="284" y1="304" x2="290" y2="310"/>
+        <line x1="290" y1="130" x2="284" y2="136"/>
+        <line x1="116" y1="304" x2="110" y2="310"/>
+      </g>
+
+      <!-- Subtle inner ring -->
+      <circle cx="200" cy="220" r="118" fill="none" stroke="#D97706" stroke-width="1.5" opacity="0.4"/>
     </g>
-
-    <!-- Subtle inner ring -->
-    <circle cx="200" cy="220" r="118" fill="none" stroke="#D97706" stroke-width="1.5" opacity="0.4"/>
 
     <!-- ===== FACE ===== -->
 
@@ -121,87 +131,105 @@
     <ellipse cx="148" cy="248" rx="16" ry="9" fill="url(#blush)"/>
     <ellipse cx="252" cy="248" rx="16" ry="9" fill="url(#blush)"/>
 
-    <!-- Eyebrows (slight tilt = friendly, confident) -->
-    <path d="M 150 180 q 12 -6 26 0" fill="none" stroke="#0A2540" stroke-width="4" stroke-linecap="round"/>
-    <path d="M 224 180 q 12 -6 26 0" fill="none" stroke="#0A2540" stroke-width="4" stroke-linecap="round"/>
+    <g id="layer-left-eyebrow" data-layer="left-eyebrow">
+      <!-- Left eyebrow (slight tilt = friendly, confident) -->
+      <path d="M 150 180 q 12 -6 26 0" fill="none" stroke="#0A2540" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g id="layer-right-eyebrow" data-layer="right-eyebrow">
+      <!-- Right eyebrow (slight tilt = friendly, confident) -->
+      <path d="M 224 180 q 12 -6 26 0" fill="none" stroke="#0A2540" stroke-width="4" stroke-linecap="round"/>
+    </g>
 
     <!-- Eyes: big, expressive, with shine -->
-    <!-- Left eye -->
-    <ellipse cx="162" cy="218" rx="14" ry="18" fill="#0A2540"/>
-    <ellipse cx="158" cy="212" rx="5" ry="6" fill="#FFFFFF"/>
-    <circle cx="167" cy="224" r="2.5" fill="#FFFFFF"/>
+    <g id="layer-left-eye" data-layer="left-eye">
+      <!-- Left eye -->
+      <ellipse cx="162" cy="218" rx="14" ry="18" fill="#0A2540"/>
+      <ellipse cx="158" cy="212" rx="5" ry="6" fill="#FFFFFF"/>
+      <circle cx="167" cy="224" r="2.5" fill="#FFFFFF"/>
+    </g>
 
-    <!-- Right eye -->
-    <ellipse cx="238" cy="218" rx="14" ry="18" fill="#0A2540"/>
-    <ellipse cx="234" cy="212" rx="5" ry="6" fill="#FFFFFF"/>
-    <circle cx="243" cy="224" r="2.5" fill="#FFFFFF"/>
+    <g id="layer-right-eye" data-layer="right-eye">
+      <!-- Right eye -->
+      <ellipse cx="238" cy="218" rx="14" ry="18" fill="#0A2540"/>
+      <ellipse cx="234" cy="212" rx="5" ry="6" fill="#FFFFFF"/>
+      <circle cx="243" cy="224" r="2.5" fill="#FFFFFF"/>
+    </g>
 
-    <!-- Smile (confident, slightly open mouth showing teeth) -->
-    <path d="M 168 268 q 32 26 64 0" fill="#0A2540" stroke="#0A2540" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M 174 270 q 26 18 52 0" fill="#FFFFFF" opacity="0.95"/>
-    <!-- Tongue accent -->
-    <path d="M 188 282 q 12 8 24 0 q -2 8 -12 8 q -10 0 -12 -8 z" fill="#F472B6"/>
+    <g id="layer-mouth" data-layer="mouth">
+      <!-- Smile (confident, slightly open mouth showing teeth) -->
+      <path d="M 168 268 q 32 26 64 0" fill="#0A2540" stroke="#0A2540" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M 174 270 q 26 18 52 0" fill="#FFFFFF" opacity="0.95"/>
+      <!-- Tongue accent -->
+      <path d="M 188 282 q 12 8 24 0 q -2 8 -12 8 q -10 0 -12 -8 z" fill="#F472B6"/>
+    </g>
 
-    <!-- Dollar sign on coin (small, lower-right of face — subtle brand cue) -->
-    <text x="200" y="330" text-anchor="middle"
-          font-family="Inter, 'Inter Variable', system-ui, sans-serif"
-          font-size="28" font-weight="800" fill="#D97706" opacity="0.55">$</text>
+        <!-- Cent sign on coin face (large, centered, very subtle) -->
+            <text x="200" y="230" text-anchor="middle" dominant-baseline="middle"
+              font-family="Inter, 'Inter Variable', system-ui, sans-serif"
+              font-size="172" font-weight="800" fill="#D97706" opacity="0.10">¢</text>
 
-    <!-- ===== HEADPHONES (teen-cool detail) ===== -->
-    <!-- Headband -->
-    <path d="M 100 165 q 100 -110 200 0"
-          fill="none" stroke="url(#brandGrad)" stroke-width="10" stroke-linecap="round"/>
-    <path d="M 100 165 q 100 -110 200 0"
-          fill="none" stroke="#0A2540" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-    <!-- Left earcup -->
-    <circle cx="92" cy="180" r="22" fill="url(#brandGrad)"/>
-    <circle cx="92" cy="180" r="14" fill="#0A2540"/>
-    <circle cx="86" cy="174" r="3" fill="#FFFFFF" opacity="0.6"/>
-    <!-- Right earcup -->
-    <circle cx="308" cy="180" r="22" fill="url(#brandGrad)"/>
-    <circle cx="308" cy="180" r="14" fill="#0A2540"/>
-    <circle cx="302" cy="174" r="3" fill="#FFFFFF" opacity="0.6"/>
+        <g id="layer-headphones" data-layer="headphones">
+      <!-- ===== HEADPHONES (teen-cool detail) ===== -->
+      <!-- Headband -->
+      <path d="M 100 165 q 100 -110 200 0"
+        fill="none" stroke="url(#brandGrad)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 100 165 q 100 -110 200 0"
+        fill="none" stroke="#0A2540" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+          <!-- Left earcup -->
+          <rect x="71" y="157" width="42" height="46" rx="14" fill="url(#brandGrad)"/>
+          <rect x="79" y="165" width="26" height="30" rx="9" fill="#1E3A8A"/>
+          <circle cx="85" cy="171" r="2.8" fill="#FFFFFF" opacity="0.6"/>
+          <!-- Right earcup -->
+          <rect x="287" y="157" width="42" height="46" rx="14" fill="url(#brandGrad)"/>
+          <rect x="295" y="165" width="26" height="30" rx="9" fill="#1E3A8A"/>
+          <circle cx="301" cy="171" r="2.8" fill="#FFFFFF" opacity="0.6"/>
+        </g>
 
     <!-- ===== ARMS & HANDS ===== -->
 
-    <!-- LEFT ARM — raised, pointing up (the "look here!" teaching gesture) -->
-    <path d="M 90 235 q -30 -40 -10 -90"
-          fill="none" stroke="#0A2540" stroke-width="14" stroke-linecap="round"/>
-    <!-- Left glove (pointing index finger up) -->
-    <g transform="translate(78, 138)">
-      <!-- Palm -->
-      <circle cx="0" cy="0" r="16" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5"/>
-      <!-- Pointing index finger -->
-      <path d="M -4 -10 q -2 -22 4 -28 q 6 -2 8 4 q 2 24 -2 28 z"
-            fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5" stroke-linejoin="round"/>
-      <!-- Thumb -->
-      <path d="M 12 -2 q 8 0 10 6 q 0 6 -8 8 q -6 0 -8 -6 z"
-            fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5" stroke-linejoin="round"/>
-      <!-- Knuckle line accents -->
-      <path d="M -8 4 q 8 4 16 0" fill="none" stroke="#0A2540" stroke-width="1.5" opacity="0.5"/>
+        <g id="layer-left-arm" data-layer="left-arm">
+      <!-- LEFT ARM — raised, pointing up (the "look here!" teaching gesture) -->
+      <path d="M 90 235 q -30 -40 -10 -90"
+        fill="none" stroke="#0A2540" stroke-width="14" stroke-linecap="round"/>
+      <!-- Left glove (pointing index finger up) -->
+      <g transform="translate(78, 138)">
+        <!-- Palm -->
+        <circle cx="0" cy="0" r="16" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5"/>
+        <!-- Pointing index finger -->
+        <path d="M -4 -10 q -2 -22 4 -28 q 6 -2 8 4 q 2 24 -2 28 z"
+          fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Thumb -->
+        <path d="M 12 -2 q 8 0 10 6 q 0 6 -8 8 q -6 0 -8 -6 z"
+          fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Knuckle line accents -->
+        <path d="M -8 4 q 8 4 16 0" fill="none" stroke="#0A2540" stroke-width="1.5" opacity="0.5"/>
+      </g>
+        </g>
+
+    <g id="layer-right-arm" data-layer="right-arm">
+      <!-- RIGHT ARM — waving hello at the user -->
+      <path d="M 310 235 q 38 -10 50 -50"
+            fill="none" stroke="#0A2540" stroke-width="14" stroke-linecap="round"/>
+      <!-- Right glove (open palm waving) -->
+      <g transform="translate(362, 178)">
+        <!-- Palm -->
+        <circle cx="0" cy="0" r="18" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5"/>
+        <!-- Fingers (4 little bumps on top) -->
+        <path d="M -14 -6 q 2 -10 6 -10 q 4 0 4 8" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
+        <path d="M -6 -10 q 2 -12 6 -12 q 4 0 4 10" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
+        <path d="M 2 -10 q 2 -12 6 -12 q 4 0 4 10" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
+        <path d="M 10 -8 q 2 -10 6 -10 q 4 0 4 8" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
+        <!-- Thumb -->
+        <path d="M -16 4 q -8 2 -8 10 q 2 8 10 6 q 6 -2 6 -8 z"
+              fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Palm crease -->
+        <path d="M -8 8 q 8 4 16 0" fill="none" stroke="#0A2540" stroke-width="1.5" opacity="0.5"/>
+      </g>
+
     </g>
 
-    <!-- RIGHT ARM — waving hello at the user -->
-    <path d="M 310 235 q 38 -10 50 -50"
-          fill="none" stroke="#0A2540" stroke-width="14" stroke-linecap="round"/>
-    <!-- Right glove (open palm waving) -->
-    <g transform="translate(362, 178)">
-      <!-- Palm -->
-      <circle cx="0" cy="0" r="18" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5"/>
-      <!-- Fingers (4 little bumps on top) -->
-      <path d="M -14 -6 q 2 -10 6 -10 q 4 0 4 8" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
-      <path d="M -6 -10 q 2 -12 6 -12 q 4 0 4 10" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
-      <path d="M 2 -10 q 2 -12 6 -12 q 4 0 4 10" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
-      <path d="M 10 -8 q 2 -10 6 -10 q 4 0 4 8" fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2"/>
-      <!-- Thumb -->
-      <path d="M -16 4 q -8 2 -8 10 q 2 8 10 6 q 6 -2 6 -8 z"
-            fill="url(#gloveGrad)" stroke="#0A2540" stroke-width="2.5" stroke-linejoin="round"/>
-      <!-- Palm crease -->
-      <path d="M -8 8 q 8 4 16 0" fill="none" stroke="#0A2540" stroke-width="1.5" opacity="0.5"/>
-    </g>
-
-    <!-- Motion lines next to waving hand (subtle "I'm waving!" energy) -->
-    <g stroke="#635BFF" stroke-width="3" stroke-linecap="round" opacity="0.7" fill="none">
+    <g id="layer-fx-motion-lines" data-layer="fx-motion-lines" stroke="#635BFF" stroke-width="3" stroke-linecap="round" opacity="0.7" fill="none">
+      <!-- Motion lines near the waving hand -->
       <path d="M 386 150 q 6 -4 4 -12"/>
       <path d="M 378 132 q 4 -6 0 -14"/>
     </g>
