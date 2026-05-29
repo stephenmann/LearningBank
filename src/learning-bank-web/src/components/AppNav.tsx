@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleHelp, Landmark, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { CircleHelp, Landmark, LayoutDashboard, ListChecks, LogOut, Settings, Users } from "lucide-react";
 
 interface NavProps {
   role: "Parent" | "Child";
@@ -43,6 +43,10 @@ export function AppNav({ role, displayName, onSignOut }: NavProps) {
           <Link href="/dashboard" className={linkClass("/dashboard")}>
             <LayoutDashboard className="w-4 h-4" aria-hidden />
             Dashboard
+          </Link>
+          <Link href="/tasks" className={linkClass("/tasks")}>
+            <ListChecks className="w-4 h-4" aria-hidden />
+            Tasks
           </Link>
           {role === "Parent" && (
             <>

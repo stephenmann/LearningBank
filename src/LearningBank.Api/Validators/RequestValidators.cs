@@ -84,3 +84,50 @@ public sealed class CreateParentAdminValidator : AbstractValidator<CreateParentA
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
     }
 }
+
+public sealed class CreateLearningTaskValidator : AbstractValidator<CreateLearningTaskRequest>
+{
+    public CreateLearningTaskValidator()
+    {
+        RuleFor(x => x.ChildId).NotEmpty();
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.MonetaryValue).GreaterThan(0).WithMessage("Monetary value must be positive.");
+        RuleFor(x => x.CategoryId).NotEmpty();
+        RuleFor(x => x.TargetAccount).NotEmpty();
+        RuleFor(x => x.RecurrenceType).NotEmpty();
+        RuleFor(x => x.Frequency).MaximumLength(40);
+        RuleFor(x => x.MaxOccurrences)
+            .Must(v => !v.HasValue || v.Value > 0)
+            .WithMessage("Maximum occurrences must be positive.");
+        RuleFor(x => x.DaysOfWeek)
+            .Must(days => days is null || days.All(d => d is >= 0 and <= 6))
+            .WithMessage("Days of week must be between 0 and 6.");
+    }
+}
+
+public sealed class TaskCompletionReviewValidator : AbstractValidator<TaskCompletionReviewRequest>
+{
+    public TaskCompletionReviewValidator()
+    {
+        RuleFor(x => x.ReviewNote).MaximumLength(500);
+    }
+}
+
+public sealed class UpdateLearningTaskValidator : AbstractValidator<UpdateLearningTaskRequest>
+{
+    public UpdateLearningTaskValidator()
+    {
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.MonetaryValue).GreaterThan(0).WithMessage("Monetary value must be positive.");
+        RuleFor(x => x.CategoryId).NotEmpty();
+        RuleFor(x => x.TargetAccount).NotEmpty();
+        RuleFor(x => x.RecurrenceType).NotEmpty();
+        RuleFor(x => x.Frequency).MaximumLength(40);
+        RuleFor(x => x.MaxOccurrences)
+            .Must(v => !v.HasValue || v.Value > 0)
+            .WithMessage("Maximum occurrences must be positive.");
+        RuleFor(x => x.DaysOfWeek)
+            .Must(days => days is null || days.All(d => d is >= 0 and <= 6))
+            .WithMessage("Days of week must be between 0 and 6.");
+    }
+}

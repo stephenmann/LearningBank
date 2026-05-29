@@ -27,6 +27,30 @@ const screenshotCards = [
   },
 ] as const;
 
+const taskRewardScreenshotCards = [
+  {
+    title: "Parent task builder",
+    caption: "Set clear instructions, due cadence, and reward amounts in one focused setup screen.",
+    src: "/images/screenshots/ParentTaskView.png",
+    alt: "Parent task builder screenshot",
+    className: "bg-white",
+  },
+  {
+    title: "Recurring task planning",
+    caption: "Parents define repeating chores with weekly cadence, selected weekdays, and optional stop rules.",
+    src: "/images/screenshots/ParentTaskViewRecurring.png",
+    alt: "Parent recurring task setup screenshot",
+    className: "bg-[#e2f6d5]",
+  },
+  {
+    title: "Reward posted as deposit",
+    caption: "After approval, the reward lands in transaction history as a categorized deposit children can trace.",
+    src: "/images/screenshots/RewardDeposit.png",
+    alt: "Reward deposit transaction screenshot",
+    className: "bg-[#0e0f0c] text-white",
+  },
+] as const;
+
 export default async function HomePage() {
   const session = await auth();
   if (session) {
@@ -38,6 +62,14 @@ export default async function HomePage() {
     caption: "A guided view for children",
     src: "/images/screenshots/ChildView.png",
     alt: "Child dashboard screenshot",
+    className: "bg-white",
+  };
+
+  const taskRewardHeroScreenshot = {
+    title: "Child task list",
+    caption: "Children see clear next steps and submit finished work for parent review with one tap.",
+    src: "/images/screenshots/ChildTaskView.png",
+    alt: "Child task list screenshot",
     className: "bg-white",
   };
 
@@ -98,7 +130,31 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 pb-12 pt-8 lg:px-10 lg:pb-14 lg:pt-10">
-        <LandingScreenshotGallery heroScreenshot={heroScreenshot} gallery={screenshotCards} />
+        <LandingScreenshotGallery
+          heroScreenshot={heroScreenshot}
+          gallery={screenshotCards}
+          heroEyebrow="Child dashboard"
+        />
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-8 pt-4 lg:px-10 lg:pb-10 lg:pt-6">
+        <div className="rounded-[24px] border border-[#c5edab] bg-white/70 px-6 py-6 sm:px-7 sm:py-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#2f5d1f]">Task + reward workflow</p>
+          <h2 className="mt-2 text-3xl font-black leading-tight sm:text-4xl">Turn chores into visible wins.</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-[#454745] sm:text-base">
+            Parents can assign one-time or recurring tasks with explicit reward amounts, set where each reward lands,
+            and approve completions before money is posted. Kids get a clear checklist, immediate feedback, and a
+            transaction trail that connects effort to outcomes.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-6 pb-12 pt-2 lg:px-10 lg:pb-14 lg:pt-4">
+        <LandingScreenshotGallery
+          heroScreenshot={taskRewardHeroScreenshot}
+          gallery={taskRewardScreenshotCards}
+          heroEyebrow="Parent controls"
+        />
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-10 lg:py-14">

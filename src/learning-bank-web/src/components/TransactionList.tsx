@@ -12,6 +12,7 @@ interface TransactionListProps {
 const typeIcon = (type: TransactionDto["type"]) => {
   switch (type) {
     case "Deposit":
+    case "TaskReward":
       return <ArrowDownLeft className="w-4 h-4 text-[#2ead4b]" aria-hidden />;
     case "Withdrawal":
       return <ArrowUpRight className="w-4 h-4 text-[#d03238]" aria-hidden />;
@@ -23,6 +24,7 @@ const typeIcon = (type: TransactionDto["type"]) => {
 const typeLabel = (type: TransactionDto["type"]) => {
   switch (type) {
     case "Deposit": return "Deposit";
+    case "TaskReward": return "Deposit";
     case "Withdrawal": return "Withdrawal";
     case "TransferDebit": return "Transfer out";
     case "TransferCredit": return "Transfer in";
@@ -30,7 +32,7 @@ const typeLabel = (type: TransactionDto["type"]) => {
 };
 
 const amountClass = (type: TransactionDto["type"]) => {
-  if (type === "Deposit" || type === "TransferCredit")
+  if (type === "Deposit" || type === "TaskReward" || type === "TransferCredit")
     return "text-[#2ead4b] tabular-nums";
   return "text-[#d03238] tabular-nums";
 };
@@ -41,7 +43,7 @@ const formatAmount = (
   formatCurrency: (value: number | string) => string
 ) => {
   const abs = Math.abs(parseFloat(amount));
-  const prefix = type === "Deposit" || type === "TransferCredit" ? "+" : "−";
+  const prefix = type === "Deposit" || type === "TaskReward" || type === "TransferCredit" ? "+" : "−";
   return `${prefix}${formatCurrency(abs)}`;
 };
 

@@ -37,6 +37,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ITransactionRepository, TransactionRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ITransferRequestRepository, TransferRequestRepository>();
+        services.AddScoped<ILearningTaskRepository, LearningTaskRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         return services;

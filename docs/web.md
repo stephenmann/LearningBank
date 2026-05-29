@@ -109,6 +109,19 @@ Exclusions include:
 - Global styles and design tokens: src/learning-bank-web/src/app/globals.css
 - Static images: src/learning-bank-web/public/images
 
+### Task and Reward Screenshots
+Landing page screenshots for the task/reward feature live in src/learning-bank-web/public/images/screenshots:
+- Parent task hero: ParentTaskView.png
+- Child tasks list: ChildTaskView.png
+- Parent recurring task setup: ParentTaskViewRecurring.png
+- Reward shown as deposit in history: RewardDeposit.png
+
+These are rendered on the home page in a second hero-and-gallery block to explain the end-to-end flow:
+1. Parent defines tasks and reward routing.
+2. Child submits completed tasks.
+3. Parent approves completion.
+4. Reward posts to the selected account as a categorized deposit.
+
 ## Environment Variables
 Template file: src/learning-bank-web/.env.example
 

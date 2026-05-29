@@ -14,9 +14,14 @@ interface ScreenshotItem {
 interface LandingScreenshotGalleryProps {
   heroScreenshot: ScreenshotItem;
   gallery: readonly ScreenshotItem[];
+  heroEyebrow?: string;
 }
 
-export function LandingScreenshotGallery({ heroScreenshot, gallery }: LandingScreenshotGalleryProps) {
+export function LandingScreenshotGallery({
+  heroScreenshot,
+  gallery,
+  heroEyebrow = "Featured view",
+}: LandingScreenshotGalleryProps) {
   const [selected, setSelected] = useState<ScreenshotItem | null>(null);
 
   return (
@@ -28,8 +33,9 @@ export function LandingScreenshotGallery({ heroScreenshot, gallery }: LandingScr
         aria-label={`Open ${heroScreenshot.title} screenshot`}
       >
         <div className="bg-[#0e0f0c] px-4 py-3 text-[#9fe870]">
-          <p className="text-xs uppercase tracking-[0.08em] text-[#c5edab]">Child dashboard</p>
-          <p className="mt-1 text-lg font-semibold text-white">A guided view for children</p>
+          <p className="text-xs uppercase tracking-[0.08em] text-[#c5edab]">{heroEyebrow}</p>
+          <p className="mt-1 text-lg font-semibold text-white">{heroScreenshot.title}</p>
+          <p className="mt-0.5 text-sm text-[#dfe6d8]">{heroScreenshot.caption}</p>
         </div>
         <Image
           src={heroScreenshot.src}

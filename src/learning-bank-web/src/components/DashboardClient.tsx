@@ -197,7 +197,7 @@ export function DashboardClient({
   const checkingBalance = parseFloat(checking.balance);
   const savingsBalance = parseFloat(savings.balance);
 
-  const canDeleteTransaction = (txType: "Deposit" | "Withdrawal" | "TransferDebit" | "TransferCredit", txDescription: string) =>
+  const canDeleteTransaction = (txType: "Deposit" | "Withdrawal" | "TransferDebit" | "TransferCredit" | "TaskReward", txDescription: string) =>
     role === "Parent" &&
     (txType === "Deposit" || txType === "Withdrawal") &&
     !txDescription.startsWith("Reversal of ");

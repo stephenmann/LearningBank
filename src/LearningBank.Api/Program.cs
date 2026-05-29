@@ -186,6 +186,7 @@ api.MapUserEndpoints();
 api.MapCategoryEndpoints();
 api.MapAccountEndpoints();
 api.MapTransactionEndpoints();
+api.MapTaskEndpoints();
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 

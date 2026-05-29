@@ -8,6 +8,7 @@ interface ParentChildTabsProps {
   activeChildId: string;
   activeChildName: string;
   parentDisplayName: string;
+  basePath?: string;
 }
 
 export function ParentChildTabs({
@@ -15,6 +16,7 @@ export function ParentChildTabs({
   activeChildId,
   activeChildName,
   parentDisplayName,
+  basePath = "/dashboard",
 }: ParentChildTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -22,7 +24,7 @@ export function ParentChildTabs({
   const handleSelectChild = (childId: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("child", childId);
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   };
 
   if (childList.length === 0) return null;

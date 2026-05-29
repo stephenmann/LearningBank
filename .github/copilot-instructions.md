@@ -168,6 +168,7 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 - File-scoped namespaces. `var` when the type is obvious from the right-hand side.
 - One class per file. Records for DTOs and value objects.
 - Domain layer has zero references to ASP.NET, EF Core, or any infrastructure assembly.
+- When `Database:Provider = "Sqlite"`, do **not** use server-side `OrderBy`/`ThenBy` on `DateTimeOffset` in EF LINQ queries (SQLite translation limitation). Materialize first with `ToListAsync()` and then sort in memory via LINQ to Objects.
 
 ### TypeScript / React
 - Functional components only. No class components.

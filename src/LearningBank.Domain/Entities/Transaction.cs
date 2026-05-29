@@ -141,6 +141,31 @@ public sealed class Transaction
         return (debit, credit);
     }
 
+    public static Transaction CreateTaskReward(
+        Guid childId,
+        decimal amount,
+        Guid? categoryId,
+        TaskTargetAccount targetAccount,
+        string description,
+        Guid enteredByParentId)
+    {
+        if (amount <= 0) throw new ArgumentException("Task reward amount must be positive.", nameof(amount));
+        if (enteredByParentId == Guid.Empty) throw new ArgumentException("Parent ID is required.", nameof(enteredByParentId));
+
+        return new Transaction
+        {
+            Id = Guid.NewGuid(),
+            ChildId = childId,
+            Account = targetAccount == TaskTargetAccount.Checking ? AccountType.Checking : AccountType.Savings,
+            Type = TransactionType.TaskReward,
+            Amount = amount,
+            Description = description,
+            CategoryId = categoryId,
+            EnteredByParentId = enteredByParentId,
+            PostedAt = DateTimeOffset.UtcNow
+        };
+    }
+
     /// <summary>
     /// Creates a compensating transaction that reverses a posted non-transfer transaction.
     /// This preserves immutability by appending a new entry instead of editing/deleting.

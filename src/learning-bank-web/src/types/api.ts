@@ -33,7 +33,7 @@ export interface CategoryDto {
 export interface TransactionDto {
   id: string;
   account: "Checking" | "Savings";
-  type: "Deposit" | "Withdrawal" | "TransferDebit" | "TransferCredit";
+  type: "Deposit" | "Withdrawal" | "TransferDebit" | "TransferCredit" | "TaskReward";
   amount: string;
   description: string;
   categoryName: string | null;
@@ -54,5 +54,41 @@ export interface TransferRequestDto {
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";
   requestedAt: string;
   reviewedAt: string | null;
+  reviewNote: string | null;
+}
+
+export interface LearningTaskDto {
+  id: string;
+  childId: string;
+  title: string;
+  monetaryValue: string;
+  categoryId: string | null;
+  targetAccount: "Checking" | "Savings";
+  recurrenceType: "OneTime" | "Recurring";
+  frequency: "Weekly" | "Biweekly" | null;
+  daysOfWeek: number[];
+  startDateUtc: string;
+  endDateUtc: string | null;
+  maxOccurrences: number | null;
+  isActive: boolean;
+  canMarkComplete: boolean;
+  isPendingReview: boolean;
+  isCompletedForCurrentCycle: boolean;
+  currentOccurrenceDateUtc: string | null;
+  nextOccurrenceDateUtc: string | null;
+  lastApprovedAt: string | null;
+  lastReviewNote: string | null;
+}
+
+export interface PendingTaskCompletionDto {
+  completionId: string;
+  taskId: string;
+  childId: string;
+  taskTitle: string;
+  monetaryValue: string;
+  targetAccount: "Checking" | "Savings";
+  occurrenceDateUtc: string;
+  completedByChildAt: string;
+  status: "Pending" | "Approved" | "Rejected";
   reviewNote: string | null;
 }

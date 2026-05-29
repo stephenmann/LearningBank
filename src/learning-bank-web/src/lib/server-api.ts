@@ -4,6 +4,8 @@ import type {
   AccountSummaryDto,
   CategoryDto,
   ChildDto,
+  LearningTaskDto,
+  PendingTaskCompletionDto,
   TransferRequestDto,
   UserDto,
 } from "@/types/api";
@@ -71,4 +73,24 @@ export async function getCoAdminParents(): Promise<any[]> {
     {},
     token
   ).catch(() => []);
+}
+
+export async function getTasks(childId: string): Promise<LearningTaskDto[]> {
+  const token = await getToken();
+  return apiRequest<LearningTaskDto[]>(
+    `/children/${childId}/tasks`,
+    {},
+    token
+  );
+}
+
+export async function getPendingTaskCompletions(
+  childId: string
+): Promise<PendingTaskCompletionDto[]> {
+  const token = await getToken();
+  return apiRequest<PendingTaskCompletionDto[]>(
+    `/children/${childId}/tasks/completions/pending`,
+    {},
+    token
+  );
 }

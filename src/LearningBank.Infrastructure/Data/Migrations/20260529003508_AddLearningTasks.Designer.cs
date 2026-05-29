@@ -3,6 +3,7 @@ using System;
 using LearningBank.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LearningBank.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(LearningBankDbContext))]
-    partial class LearningBankDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260529003508_AddLearningTasks")]
+    partial class AddLearningTasks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
@@ -116,9 +119,6 @@ namespace LearningBank.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("ChildId")
                         .HasColumnType("TEXT");
 
@@ -162,8 +162,6 @@ namespace LearningBank.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("ChildId", "IsActive");
 
@@ -360,18 +358,11 @@ namespace LearningBank.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("LearningBank.Domain.Entities.LearningTask", b =>
                 {
-                    b.HasOne("LearningBank.Domain.Entities.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("LearningBank.Domain.Entities.User", "Child")
                         .WithMany()
                         .HasForeignKey("ChildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Category");
 
                     b.Navigation("Child");
                 });
