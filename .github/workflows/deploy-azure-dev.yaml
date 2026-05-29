@@ -16,12 +16,12 @@ jobs:
     name: Deploy API and Web
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
 
     env:
-      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank' }}
-      API_APP_NAME: learningbank-api
-      WEB_APP_NAME: learningbank-web
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank-Dev' }}
+      API_APP_NAME: learningbank-api-dev
+      WEB_APP_NAME: learningbank-web-dev
       APP_SERVICE_PLAN_NAME: learningbank-plan
 
     steps:

@@ -20,7 +20,7 @@ export default async function SignInPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/learning-bank-logo.svg"
-            alt="Learning Bank"
+            alt="My Learning Bank"
             className="h-12"
           />
         </div>
@@ -87,7 +87,7 @@ export default async function SignInPage() {
         </div>
 
         <p className="mt-8 text-xs text-[#868685] text-center">
-          Learning Bank is a teaching tool. No real money is involved.
+          My Learning Bank is a teaching tool. No real money is involved.
         </p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 # Auth Setup Guide
 
-This guide covers local authentication setup for Learning Bank.
+This guide covers local authentication setup for My Learning Bank.
 
 ## Files Used
 - Web environment template: src/learning-bank-web/.env.example

@@ -1,7 +1,7 @@
 # API Component Documentation
 
 ## Scope
-The API project is in src/LearningBank.Api and exposes the Learning Bank backend as ASP.NET Core minimal API endpoints under /api/v1.
+The API project is in src/LearningBank.Api and exposes the My Learning Bank backend as ASP.NET Core minimal API endpoints under /api/v1.
 
 ## Responsibilities
 - Authenticate and authorize requests using JWT bearer authentication and role-based policies.

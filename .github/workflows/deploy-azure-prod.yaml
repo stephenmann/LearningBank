@@ -19,9 +19,9 @@ jobs:
     environment: prod
 
     env:
-      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank' }}
-      API_APP_NAME: learningbank-api
-      WEB_APP_NAME: learningbank-web
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank-Prod' }}
+      API_APP_NAME: learningbank-api-prod
+      WEB_APP_NAME: learningbank-web-prod
       SLOT_NAME: staging
       APP_SERVICE_PLAN_NAME: learningbank-plan
       LOG_ANALYTICS_WORKSPACE_NAME: learningbank-law-prod

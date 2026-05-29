@@ -1,4 +1,4 @@
-# Learning Bank Documentation Index
+# My Learning Bank Documentation Index
 
 This directory contains implementation-focused component documentation.
 
@@ -27,19 +27,19 @@ This directory contains implementation-focused component documentation.
 These screenshots show the current product surfaces and the child-focused Penny guide.
 
 ### Sign-in page
-![Learning Bank sign-in page](../src/learning-bank-web/public/images/screenshots/Login.png)
+![My Learning Bank sign-in page](../src/learning-bank-web/public/images/screenshots/Login.png)
 
 ### Child dashboard
-![Learning Bank child dashboard](../src/learning-bank-web/public/images/screenshots/ChildView.png)
+![My Learning Bank child dashboard](../src/learning-bank-web/public/images/screenshots/ChildView.png)
 
 ### Parent dashboard
-![Learning Bank parent dashboard](../src/learning-bank-web/public/images/screenshots/ParentDashboard.png)
+![My Learning Bank parent dashboard](../src/learning-bank-web/public/images/screenshots/ParentDashboard.png)
 
 ### Settings page
-![Learning Bank settings page](../src/learning-bank-web/public/images/screenshots/Settings.png)
+![My Learning Bank settings page](../src/learning-bank-web/public/images/screenshots/Settings.png)
 
 ### Penny guide
-![Learning Bank Penny guide](../src/learning-bank-web/public/images/screenshots/PennyGuide.png)
+![My Learning Bank Penny guide](../src/learning-bank-web/public/images/screenshots/PennyGuide.png)
 
 ## Why this order
 - Domain defines core rules and contracts.

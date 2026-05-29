@@ -35,7 +35,7 @@ export function AppNav({ role, displayName, onSignOut }: NavProps) {
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 font-black text-[#0e0f0c]">
           <Landmark className="w-5 h-5 text-[#9fe870]" aria-hidden />
-          <span className="text-base font-black tracking-tight">Learning Bank</span>
+          <span className="text-base font-black tracking-tight">My Learning Bank</span>
         </Link>
 
         {/* Nav links */}

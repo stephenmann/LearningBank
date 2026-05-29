@@ -96,7 +96,7 @@ export default async function HomePage() {
           <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-[#9fe870]/45 blur-2xl" />
           <div className="absolute -bottom-8 left-1/3 h-28 w-28 rounded-full border border-[#163300]/20" />
           <div className="relative">
-            <img src="/images/learning-bank-logo.svg" alt="Learning Bank" className="h-24 w-auto sm:h-28 lg:h-36" />
+            <img src="/images/learning-bank-logo.svg" alt="My Learning Bank" className="h-24 w-auto sm:h-28 lg:h-36" />
           </div>
         </div>
       </section>
@@ -110,7 +110,7 @@ export default async function HomePage() {
             Learn money habits with a real-world banking experience.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-[#454745] sm:text-lg">
-            Learning Bank helps children practice saving and spending with parent-supervised accounts. Kids
+            My Learning Bank helps children practice saving and spending with parent-supervised accounts. Kids
             can make deposits, move money to savings, and request transfers back to checking while parents
             stay in control. The screenshots below show the child experience, the parent dashboard, the family
             settings page, and Penny&apos;s guided tour.

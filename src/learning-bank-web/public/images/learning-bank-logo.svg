@@ -1,113 +1,353 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" role="img" aria-label="Learning Bank">
-  <title>Learning Bank</title>
-  <desc>Learning Bank logo. A rounded gradient badge containing a piggy bank wearing a graduation cap, paired with the wordmark "Learning Bank".</desc>
-
-  <defs>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 480 120"
+   role="img"
+   aria-label="Learning Bank"
+   version="1.1"
+   id="svg18"
+   sodipodi:docname="learning-bank-logo.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview18"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.4277333"
+     inkscape:cx="174.44256"
+     inkscape:cy="106.47792"
+     inkscape:window-width="3440"
+     inkscape:window-height="1369"
+     inkscape:window-x="532"
+     inkscape:window-y="1072"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g18" />
+  <title
+     id="title1">Learning Bank</title>
+  <desc
+     id="desc1">Learning Bank logo. A rounded gradient badge containing a piggy bank wearing a graduation cap, paired with the wordmark &quot;Learning Bank&quot;.</desc>
+  <defs
+     id="defs6">
     <!-- Learning Bank signature gradient: dark green → green → lime -->
-    <linearGradient id="lbBrandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#054d28"/>
-      <stop offset="55%" stop-color="#2ead4b"/>
-      <stop offset="100%" stop-color="#9fe870"/>
+    <linearGradient
+       id="lbBrandGradient"
+       x1="0%"
+       y1="0%"
+       x2="100%"
+       y2="100%">
+      <stop
+         offset="0%"
+         stop-color="#054d28"
+         id="stop1" />
+      <stop
+         offset="55%"
+         stop-color="#2ead4b"
+         id="stop2" />
+      <stop
+         offset="100%"
+         stop-color="#9fe870"
+         id="stop3" />
     </linearGradient>
-
     <!-- Soft inner highlight for the piggy body to add subtle depth -->
-    <linearGradient id="lbPigHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    <linearGradient
+       id="lbPigHighlight"
+       x1="0%"
+       y1="0%"
+       x2="0%"
+       y2="100%">
+      <stop
+         offset="0%"
+         stop-color="#FFFFFF"
+         stop-opacity="0.35"
+         id="stop4" />
+      <stop
+         offset="100%"
+         stop-color="#FFFFFF"
+         stop-opacity="0"
+         id="stop5" />
     </linearGradient>
-
     <!-- Soft drop shadow for the badge -->
-    <filter id="lbBadgeShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/>
-      <feOffset dx="0" dy="2" result="offsetblur"/>
-      <feComponentTransfer>
-        <feFuncA type="linear" slope="0.18"/>
+    <filter
+       id="lbBadgeShadow"
+       x="-0.055000001"
+       y="-0.055000001"
+       width="1.11"
+       height="1.1308333">
+      <feGaussianBlur
+         in="SourceAlpha"
+         stdDeviation="2.2"
+         id="feGaussianBlur5" />
+      <feOffset
+         dx="0"
+         dy="2"
+         result="offsetblur"
+         id="feOffset5" />
+      <feComponentTransfer
+         id="feComponentTransfer5">
+        <feFuncA
+           type="linear"
+           slope="0.18"
+           id="feFuncA5" />
       </feComponentTransfer>
-      <feMerge>
-        <feMergeNode/>
-        <feMergeNode in="SourceGraphic"/>
+      <feMerge
+         id="feMerge6">
+        <feMergeNode
+           id="feMergeNode5" />
+        <feMergeNode
+           in="SourceGraphic"
+           id="feMergeNode6" />
       </feMerge>
     </filter>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#lbBrandGradient"
+       id="linearGradient19"
+       x1="162.5"
+       y1="84.5"
+       x2="169.5"
+       y2="91.5"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-81.248629,-50.149661)" />
   </defs>
-
   <!-- ========== ICON MARK ========== -->
-  <g filter="url(#lbBadgeShadow)">
+  <g
+     filter="url(#lbBadgeShadow)"
+     id="g17">
     <!-- Rounded gradient badge -->
-    <rect x="8" y="12" width="96" height="96" rx="22" ry="22" fill="url(#lbBrandGradient)"/>
-
+    <rect
+       x="8"
+       y="12"
+       width="96"
+       height="96"
+       rx="22"
+       ry="22"
+       fill="url(#lbBrandGradient)"
+       id="rect6" />
     <!-- Piggy bank, centered inside the badge.
          Local coordinate space: the badge spans x:[8..104], y:[12..108]. -->
-
     <!-- Graduation cap mortarboard (square top) -->
-    <g>
+    <g
+       id="g7">
       <!-- Mortarboard plate -->
-      <polygon points="36,44 76,44 56,52 16,52" fill="#0A2540"/>
-      <polygon points="36,44 76,44 96,52 56,52" fill="#0A2540"/>
+      <polygon
+         points="36,44 76,44 56,52 16,52"
+         fill="#0A2540"
+         id="polygon6" />
+      <polygon
+         points="36,44 76,44 96,52 56,52"
+         fill="#0A2540"
+         id="polygon7" />
       <!-- Cap base / band sits just above the pig's head -->
-      <path d="M 42 51 Q 56 56 70 51 L 70 56 Q 56 60 42 56 Z" fill="#0A2540"/>
+      <path
+         d="M 42 51 Q 56 56 70 51 L 70 56 Q 56 60 42 56 Z"
+         fill="#0A2540"
+         id="path7" />
       <!-- Tassel -->
-      <line x1="80" y1="49" x2="86" y2="60" stroke="#FBBF24" stroke-width="1.6" stroke-linecap="round"/>
-      <circle cx="86" cy="61" r="2.2" fill="#FBBF24"/>
+      <line
+         x1="80"
+         y1="49"
+         x2="86"
+         y2="60"
+         stroke="#FBBF24"
+         stroke-width="1.6"
+         stroke-linecap="round"
+         id="line7" />
+      <circle
+         cx="86"
+         cy="61"
+         r="2.2"
+         fill="#FBBF24"
+         id="circle7" />
     </g>
-
     <!-- Pig body -->
-    <g>
+    <g
+       id="g15">
       <!-- Main body: a soft rounded rectangle/ellipse -->
-      <ellipse cx="56" cy="78" rx="26" ry="18" fill="#FFFFFF"/>
+      <ellipse
+         cx="56"
+         cy="78"
+         rx="26"
+         ry="18"
+         fill="#FFFFFF"
+         id="ellipse7" />
       <!-- Body highlight -->
-      <ellipse cx="56" cy="74" rx="22" ry="12" fill="url(#lbPigHighlight)"/>
-
+      <ellipse
+         cx="56"
+         cy="74"
+         rx="22"
+         ry="12"
+         fill="url(#lbPigHighlight)"
+         id="ellipse8" />
       <!-- Snout -->
-      <ellipse cx="79" cy="78" rx="6" ry="5" fill="#FFFFFF"/>
-      <circle cx="78" cy="77" r="0.9" fill="#0A2540"/>
-      <circle cx="80.5" cy="77" r="0.9" fill="#0A2540"/>
-
+      <ellipse
+         cx="79"
+         cy="78"
+         rx="6"
+         ry="5"
+         fill="#FFFFFF"
+         id="ellipse9" />
+      <circle
+         cx="78"
+         cy="77"
+         r="0.9"
+         fill="#0A2540"
+         id="circle9" />
+      <circle
+         cx="80.5"
+         cy="77"
+         r="0.9"
+         fill="#0A2540"
+         id="circle10" />
       <!-- Eye -->
-      <circle cx="68" cy="71" r="1.6" fill="#0A2540"/>
-
+      <circle
+         cx="68.72084"
+         cy="70.073212"
+         r="1.6"
+         fill="#0a2540"
+         id="circle11" />
       <!-- Ear (one visible, cap covers the other) -->
-      <path d="M 64 60 L 70 60 L 67 66 Z" fill="#FFFFFF"/>
-
+      <path
+         d="M 64 60 L 70 60 L 67 66 Z"
+         fill="#FFFFFF"
+         id="path11" />
       <!-- Coin slot on the back -->
-      <rect x="48" y="63" width="12" height="2.4" rx="1.2" ry="1.2" fill="#0A2540"/>
-
+      <rect
+         x="48"
+         y="63"
+         width="12"
+         height="2.4"
+         rx="1.2"
+         ry="1.2"
+         fill="#0A2540"
+         id="rect11" />
       <!-- Legs -->
-      <rect x="40" y="92" width="5" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="50" y="93" width="5" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="64" y="93" width="5" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="74" y="92" width="5" height="6" rx="1.5" fill="#FFFFFF"/>
-
+      <rect
+         x="40"
+         y="92"
+         width="5"
+         height="6"
+         rx="1.5"
+         fill="#FFFFFF"
+         id="rect12" />
+      <rect
+         x="50"
+         y="93"
+         width="5"
+         height="6"
+         rx="1.5"
+         fill="#FFFFFF"
+         id="rect13" />
+      <rect
+         x="64"
+         y="93"
+         width="5"
+         height="6"
+         rx="1.5"
+         fill="#FFFFFF"
+         id="rect14" />
+      <rect
+         x="69.469025"
+         y="90.455353"
+         width="5"
+         height="6"
+         rx="1.5"
+         fill="#ffffff"
+         id="rect15" />
       <!-- Curly tail -->
-      <path d="M 30 74 q -4 -2 -2 -6 q 2 -4 6 -2" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+      <path
+         d="M 30 74 q -4 -2 -2 -6 q 2 -4 6 -2"
+         fill="none"
+         stroke="#FFFFFF"
+         stroke-width="2.2"
+         stroke-linecap="round"
+         id="path15" />
     </g>
-
     <!-- A small coin going into the slot, anchoring the "savings" idea -->
-    <g>
-      <circle cx="54" cy="56" r="3.2" fill="#FBBF24" stroke="#0A2540" stroke-width="0.6"/>
-      <text x="54" y="58.2" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="4.4" font-weight="700" fill="#0A2540">$</text>
+    <g
+       id="g16"
+       transform="translate(1.441674,-0.10297672)">
+      <circle
+         cx="54"
+         cy="56"
+         r="3.2"
+         fill="#fbbf24"
+         stroke="#0a2540"
+         stroke-width="0.6"
+         id="circle15" />
+      <text
+         x="54"
+         y="58.200001"
+         text-anchor="middle"
+         font-family="Inter, system-ui, sans-serif"
+         font-size="4.4px"
+         font-weight="700"
+         fill="#0a2540"
+         id="text15">$</text>
     </g>
   </g>
-
   <!-- ========== WORDMARK ========== -->
-  <g transform="translate(128, 0)">
+  <g
+     transform="translate(128, 0)"
+     id="g18">
     <!-- "Learning" — light weight for Stripe-style elegance -->
-    <text x="0" y="62"
-          font-family="Inter, 'Inter Variable', system-ui, -apple-system, sans-serif"
-          font-size="36"
-          font-weight="300"
-          letter-spacing="-0.5"
-          fill="#0A2540">Learning</text>
-
+    <text
+       x="0"
+       y="62"
+       font-family="Inter, 'Inter Variable', system-ui, -apple-system, sans-serif"
+       font-size="36"
+       font-weight="300"
+       letter-spacing="-0.5"
+       fill="#0A2540"
+       id="text17">Learning</text>
     <!-- "Bank" — medium weight, brand color, for emphasis -->
-    <text x="0" y="98"
-          font-family="Inter, 'Inter Variable', system-ui, -apple-system, sans-serif"
-          font-size="36"
-          font-weight="500"
-          letter-spacing="-0.5"
-          fill="#163300">Bank</text>
-
+    <text
+       x="0"
+       y="98"
+       font-family="Inter, 'Inter Variable', system-ui, -apple-system, sans-serif"
+       font-size="36"
+       font-weight="500"
+       letter-spacing="-0.5"
+       fill="#163300"
+       id="text18">Bank</text>
     <!-- Subtle accent dot between the two words to echo the gradient -->
-    <circle cx="166" cy="88" r="3.5" fill="url(#lbBrandGradient)"/>
+    <circle
+       cx="84.751373"
+       cy="37.850338"
+       r="3.5"
+       fill="url(#lbBrandGradient)"
+       id="circle18"
+       style="fill:url(#linearGradient19)" />
   </g>
+  <text
+     xml:space="preserve"
+     style="font-size:35.2871px;font-family:'Viner Hand ITC';-inkscape-font-specification:'Viner Hand ITC';writing-mode:lr-tb;direction:ltr;fill:#88db68;stroke-width:0.1;fill-opacity:1;stroke-dasharray:none;stroke:#59c459;stroke-opacity:1"
+     x="90.082649"
+     y="96.028137"
+     id="text19"
+     transform="matrix(0.90666269,-0.42278376,0.42245283,0.90595302,0,0)"><tspan
+       sodipodi:role="line"
+       id="tspan18"
+       x="90.082649"
+       y="96.028137"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Handwriting;-inkscape-font-specification:Handwriting;stroke-width:0.1;fill:#88db68;fill-opacity:1;stroke-dasharray:none;stroke:#59c459;stroke-opacity:1">My</tspan></text>
+  <metadata
+     id="metadata19">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Learning Bank</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
 </svg>
