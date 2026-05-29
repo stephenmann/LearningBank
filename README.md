@@ -142,6 +142,27 @@ npm run test
 npm run build
 ```
 
+## Script: Sync repository variables to environment variables
+
+Use this helper to copy all repository-level GitHub Actions variables to an environment (defaults to `prod`):
+
+```bash
+python3 scripts/sync_repo_vars_to_env.py
+```
+
+It defaults to `stephenmann/LearningBank` and environment `prod`, but supports overrides:
+
+```bash
+python3 scripts/sync_repo_vars_to_env.py --owner stephenmann --repo LearningBank --environment prod
+```
+
+Authentication options (checked in this order):
+- `--token`
+- `GH_TOKEN` / `GITHUB_TOKEN`
+- `gh auth token` (requires authenticated GitHub CLI)
+
+Token permissions must allow reading repository Actions variables and creating/updating environment Actions variables (for private repos this is typically covered by `repo` scope).
+
 ## Authentication Notes
 
 The web app uses NextAuth with Google and Microsoft Entra ID providers.
