@@ -7,12 +7,14 @@ import { AccountCard } from "@/components/AccountCard";
 import { TransactionList } from "@/components/TransactionList";
 import { DepositForm } from "@/components/DepositForm";
 import { TransferForm } from "@/components/TransferForm";
+import { WithdrawalForm } from "@/components/WithdrawalForm";
+import { DepositSymbolIcon, WithdrawSymbolIcon } from "@/components/icons/CashActionIcons";
 import type { AccountSummaryDto, CategoryDto, TransferRequestDto } from "@/types/api";
 import { hasSeenPennyFeature, markPennyFeatureSeen, type PennyGuideFeature } from "@/lib/penny-guide";
 import { useUserPreferences } from "@/lib/user-preferences";
-import { PiggyBank, Plus, ArrowRightLeft, Clock, Check, X } from "lucide-react";
+import { PiggyBank, ArrowRightLeft, Clock, Check, X } from "lucide-react";
 
-type Modal = "deposit" | "transfer-to-savings" | "request-savings" | null;
+type Modal = "deposit" | "transfer-to-savings" | "request-savings" | "withdrawal" | null;
 
 interface GuideStep {
   feature: PennyGuideFeature;
@@ -147,6 +149,7 @@ export function DashboardClient({
       deposit: "deposit-form",
       "transfer-to-savings": "transfer-form",
       "request-savings": "request-form",
+      withdrawal: "deposit-form",
     };
 
     const feature = featureByModal[nextModal];
@@ -261,6 +264,8 @@ export function DashboardClient({
       "Pick how much to move from checking into savings. The transfer happens right away after you confirm.",
     "request-savings":
       "Enter the amount and optional note, then submit your request. It will move only after your parent approves.",
+    withdrawal:
+      "Enter the amount spent and a short note so the child can see what this spending was for.",
   };
 
   const goToNextGuideStep = () => {
@@ -326,7 +331,7 @@ export function DashboardClient({
               isGuideFeatureActive("add-deposit") ? "ring-2 ring-[#0e0f0c]" : ""
             }`}
           >
-            <Plus className="w-4 h-4" aria-hidden />
+            <DepositSymbolIcon className="w-5 h-5 shrink-0" />
             Add Deposit
           </button>
         </div>
@@ -376,6 +381,16 @@ export function DashboardClient({
             Request from Savings
           </button>
         </div>
+
+        {role === "Parent" && (
+          <button
+            onClick={() => setModal("withdrawal")}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-[24px] bg-[#d03238] text-white font-semibold hover:bg-[#b02028] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d03238]"
+          >
+            <WithdrawSymbolIcon className="w-5 h-5 shrink-0" />
+            Log Spending
+          </button>
+        )}
       </div>
 
       {/* Pending requests */}
@@ -538,6 +553,13 @@ export function DashboardClient({
             setModal(null);
             setModalHint(null);
           }}
+        />
+      )}
+      {modal === "withdrawal" && (
+        <WithdrawalForm
+          childId={childId}
+          onSuccess={refresh}
+          onCancel={() => setModal(null)}
         />
       )}
 
