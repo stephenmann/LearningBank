@@ -221,7 +221,7 @@ module sqlServer './modules/sql.bicep' = if (enableSql) {
   name: 'sql'
   params: {
     name: sqlServerName
-    location: 'eastus'
+    location: 'centralus'
     databaseName: sqlDatabaseName
     aadAdminLogin: sqlAdminIdentityName
     aadAdminObjectId: sqlAdminPrincipalId
