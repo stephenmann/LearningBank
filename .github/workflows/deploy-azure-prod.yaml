@@ -29,7 +29,7 @@ jobs:
       API_MANAGEMENT_NAME: learningbank-apim-prod
       FRONT_DOOR_PROFILE_NAME: learningbank-fd-prod
       FRONT_DOOR_ENDPOINT_NAME: learningbank-edge-prod
-      FRONT_DOOR_WAF_POLICY_NAME: learningbank-fd-waf-prod
+      FRONT_DOOR_WAF_POLICY_NAME: learningBankFdWafProd
 
     steps:
       - name: Checkout
