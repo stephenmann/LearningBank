@@ -151,8 +151,8 @@ jobs:
       - name: Deploy API to staging slot
         uses: azure/webapps-deploy@v3
         with:
-          app-name: learningbank-api
-          slot-name: staging
+          app-name: ${{ env.API_APP_NAME }}
+          slot-name: ${{ env.SLOT_NAME }}
           package: ./artifacts/api
 
       - name: Run EF Core migrations against production DB
@@ -194,8 +194,8 @@ jobs:
       - name: Deploy Web to staging slot
         uses: azure/webapps-deploy@v3
         with:
-          app-name: learningbank-web
-          slot-name: staging
+          app-name: ${{ env.WEB_APP_NAME }}
+          slot-name: ${{ env.SLOT_NAME }}
           package: ./src/learning-bank-web/.next/standalone
 
       - name: Resolve Web default hostname (staging)
