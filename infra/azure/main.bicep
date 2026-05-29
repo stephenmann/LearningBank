@@ -537,16 +537,17 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
       mode: 'Prevention'
       requestBodyCheck: 'Enabled'
     }
-    // Managed rule sets require the Premium Front Door tier. The Standard tier
-    // supports custom rules only, so omit managedRules unless on Premium.
-    managedRules: frontDoorSkuName == 'Premium_AzureFrontDoor' ? {
-      managedRuleSets: [
+    // Managed rule sets require the Premium Front Door tier; the Standard tier
+    // supports custom rules only. The managedRules property is required either
+    // way, so on Standard supply an empty managedRuleSets list.
+    managedRules: {
+      managedRuleSets: frontDoorSkuName == 'Premium_AzureFrontDoor' ? [
         {
           ruleSetType: 'Microsoft_DefaultRuleSet'
           ruleSetVersion: '2.1'
         }
-      ]
-    } : null
+      ] : []
+    }
   }
 }
 
