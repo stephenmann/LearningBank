@@ -10,6 +10,9 @@ param skuName string = 'B1'
 @description('SKU tier, for example Basic or Free.')
 param skuTier string = 'Basic'
 
+@description('Number of worker instances in the App Service plan.')
+param capacity int = 1
+
 @description('App Service plan kind.')
 param kind string = 'linux'
 
@@ -23,7 +26,7 @@ resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
   sku: {
     name: skuName
     tier: skuTier
-    capacity: 1
+    capacity: capacity
   }
   properties: {
     reserved: reserved

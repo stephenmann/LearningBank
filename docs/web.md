@@ -113,7 +113,7 @@ Exclusions include:
 Template file: src/learning-bank-web/.env.example
 
 Detailed setup guide:
-- docs/environment-setup.md
+- docs/auth-setup.md
 
 Required values:
 - AUTH_SECRET

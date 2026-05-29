@@ -1,4 +1,4 @@
-name: Deploy Azure (No Slots)
+name: Deploy Azure Prod
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-azure-noslots
+  group: deploy-azure-prod
   cancel-in-progress: false
 
 jobs:
@@ -22,7 +22,14 @@ jobs:
       RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP != '' && vars.AZURE_RESOURCE_GROUP || 'LearningBank' }}
       API_APP_NAME: learningbank-api
       WEB_APP_NAME: learningbank-web
+      SLOT_NAME: staging
       APP_SERVICE_PLAN_NAME: learningbank-plan
+      LOG_ANALYTICS_WORKSPACE_NAME: learningbank-law-prod
+      APP_INSIGHTS_NAME: learningbank-ai-prod
+      API_MANAGEMENT_NAME: learningbank-apim-prod
+      FRONT_DOOR_PROFILE_NAME: learningbank-fd-prod
+      FRONT_DOOR_ENDPOINT_NAME: learningbank-edge-prod
+      FRONT_DOOR_WAF_POLICY_NAME: learningbank-fd-waf-prod
 
     steps:
       - name: Checkout
@@ -62,6 +69,8 @@ jobs:
           AZURE_AD_TENANT_ID: ${{ vars.AZURE_AD_TENANT_ID }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           API_CONNECTION_STRING: ${{ secrets.API_CONNECTION_STRING }}
+          API_MANAGEMENT_PUBLISHER_EMAIL: ${{ vars.API_MANAGEMENT_PUBLISHER_EMAIL != '' && vars.API_MANAGEMENT_PUBLISHER_EMAIL || 'ops@learningbank.local' }}
+          API_MANAGEMENT_PUBLISHER_NAME: ${{ vars.API_MANAGEMENT_PUBLISHER_NAME != '' && vars.API_MANAGEMENT_PUBLISHER_NAME || 'Learning Bank' }}
         run: |
           az deployment group create \
             --resource-group "$RESOURCE_GROUP" \
@@ -70,7 +79,27 @@ jobs:
               appServicePlanName="$APP_SERVICE_PLAN_NAME" \
               apiAppName="$API_APP_NAME" \
               webAppName="$WEB_APP_NAME" \
-              createStagingSlots=false \
+              createStagingSlots=true \
+              slotName="$SLOT_NAME" \
+              appServicePlanSkuName='P1v3' \
+              appServicePlanSkuTier='PremiumV3' \
+              appServicePlanCapacity=2 \
+              enableObservability=true \
+              logAnalyticsWorkspaceName="$LOG_ANALYTICS_WORKSPACE_NAME" \
+              logAnalyticsSkuName='PerGB2018' \
+              logRetentionInDays=30 \
+              appInsightsName="$APP_INSIGHTS_NAME" \
+              enableApiManagement=true \
+              apiManagementName="$API_MANAGEMENT_NAME" \
+              apiManagementSkuName='Standard' \
+              apiManagementSkuCapacity=1 \
+              apiManagementPublisherEmail="$API_MANAGEMENT_PUBLISHER_EMAIL" \
+              apiManagementPublisherName="$API_MANAGEMENT_PUBLISHER_NAME" \
+              enableFrontDoor=true \
+              frontDoorProfileName="$FRONT_DOOR_PROFILE_NAME" \
+              frontDoorEndpointName="$FRONT_DOOR_ENDPOINT_NAME" \
+              frontDoorSkuName='Standard_AzureFrontDoor' \
+              frontDoorWafPolicyName="$FRONT_DOOR_WAF_POLICY_NAME" \
               apiAuthAuthority="$API_AUTH_AUTHORITY" \
               apiAuthAudience="$API_AUTH_AUDIENCE" \
               nextAuthUrl="$NEXTAUTH_URL" \
@@ -101,6 +130,13 @@ jobs:
           cp -R .next/static .next/standalone/.next/static
           cp -R public .next/standalone/public
 
+      - name: Deploy API to staging slot
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: learningbank-api
+          slot-name: staging
+          package: ./artifacts/api
+
       - name: Run EF Core migrations against production DB
         env:
           ConnectionStrings__SqlServer: ${{ secrets.API_CONNECTION_STRING }}
@@ -112,52 +148,80 @@ jobs:
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
             --connection "$ConnectionStrings__SqlServer"
 
-      - name: Deploy API
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: learningbank-api
-          package: ./artifacts/api
-
-      - name: Resolve API default hostname
+      - name: Resolve API default hostname (staging)
         id: api-host
         run: |
           HOSTNAME=$(az webapp show \
             --resource-group "$RESOURCE_GROUP" \
             --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
             --query defaultHostName \
             --output tsv)
           echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
 
-      - name: API smoke test
-        run: |
-          curl --fail --show-error --silent --location \
-            "https://${{ steps.api-host.outputs.hostname }}/health"
+      - name: API smoke test (staging)
+        run: curl --fail --show-error --silent "https://${{ steps.api-host.outputs.hostname }}/health"
 
-      - name: Deploy Web
+      - name: Swap API staging to production
+        run: |
+          az webapp deployment slot swap \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --target-slot production
+
+      - name: Deploy Web to staging slot
         uses: azure/webapps-deploy@v3
         with:
           app-name: learningbank-web
+          slot-name: staging
           package: ./src/learning-bank-web/.next/standalone
 
-      - name: Resolve Web default hostname
+      - name: Resolve Web default hostname (staging)
         id: web-host
         run: |
           HOSTNAME=$(az webapp show \
             --resource-group "$RESOURCE_GROUP" \
             --name "$WEB_APP_NAME" \
+            --slot "$SLOT_NAME" \
             --query defaultHostName \
             --output tsv)
           echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
 
-      - name: Web smoke test
+      - name: Web smoke test (staging)
         run: curl --fail --show-error --silent "https://${{ steps.web-host.outputs.hostname }}/" > /dev/null
+
+      - name: Swap Web staging to production
+        run: |
+          az webapp deployment slot swap \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$WEB_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --target-slot production
+
+      - name: Resolve Front Door endpoint hostname
+        id: frontdoor-host
+        run: |
+          HOSTNAME=$(az afd endpoint show \
+            --resource-group "$RESOURCE_GROUP" \
+            --profile-name "$FRONT_DOOR_PROFILE_NAME" \
+            --endpoint-name "$FRONT_DOOR_ENDPOINT_NAME" \
+            --query hostName \
+            --output tsv)
+          echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
+
+      - name: Front Door smoke test
+        run: curl --fail --show-error --silent "https://${{ steps.frontdoor-host.outputs.hostname }}/" > /dev/null
 
       - name: Deployment summary
         run: |
           {
             echo "## Azure Deployment Summary"
             echo "- Commit: ${{ github.sha }}"
-            echo "- API app: ${API_APP_NAME} (deployed directly)"
-            echo "- Web app: ${WEB_APP_NAME} (deployed directly)"
+            echo "- API app: ${API_APP_NAME} (slot swapped from ${SLOT_NAME})"
+            echo "- Web app: ${WEB_APP_NAME} (slot swapped from ${SLOT_NAME})"
+            echo "- API Management: ${API_MANAGEMENT_NAME} (Standard)"
+            echo "- Front Door: ${FRONT_DOOR_PROFILE_NAME}/${FRONT_DOOR_ENDPOINT_NAME}"
+            echo "- Observability: ${LOG_ANALYTICS_WORKSPACE_NAME}, ${APP_INSIGHTS_NAME}"
             echo "- Auth secrets source: GitHub repository secrets"
           } >> "$GITHUB_STEP_SUMMARY"

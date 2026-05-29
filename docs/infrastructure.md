@@ -17,8 +17,8 @@ Provisioned resources:
 - Optional staging slots for API and Web apps
 
 Deployment behavior:
-- .github/workflows/deploy-azure.yaml deploys Bicep with createStagingSlots=true.
-- .github/workflows/deploy-azure-noslots.yaml deploys Bicep with createStagingSlots=false.
+- .github/workflows/deploy-azure-prod.yaml deploys Bicep with createStagingSlots=true.
+- .github/workflows/deploy-azure-dev.yaml deploys Bicep with createStagingSlots=false.
 - Deployments are idempotent via az deployment group create.
 
 Primary template parameters:

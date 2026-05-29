@@ -16,10 +16,22 @@ param appCommandLine string = ''
 @description('App settings to apply to the web app.')
 param appSettings object = {}
 
+@description('Set true to enable system-assigned managed identity on the app.')
+param enableSystemAssignedIdentity bool = true
+
+@description('Optional access restriction rules for the app endpoint.')
+param ipSecurityRestrictions array = []
+
+@description('Default action when evaluating app endpoint access restrictions.')
+param ipSecurityRestrictionsDefaultAction string = 'Allow'
+
 resource app 'Microsoft.Web/sites@2023-12-01' = {
   name: name
   location: location
   kind: 'app,linux'
+  identity: enableSystemAssignedIdentity ? {
+    type: 'SystemAssigned'
+  } : null
   properties: {
     serverFarmId: serverFarmId
     httpsOnly: true
@@ -30,6 +42,10 @@ resource app 'Microsoft.Web/sites@2023-12-01' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       http20Enabled: true
+      ipSecurityRestrictions: ipSecurityRestrictions
+      ipSecurityRestrictionsDefaultAction: ipSecurityRestrictionsDefaultAction
+      scmIpSecurityRestrictionsUseMain: false
+      scmIpSecurityRestrictionsDefaultAction: 'Allow'
     }
   }
 }

@@ -3,7 +3,10 @@
 This directory contains implementation-focused component documentation.
 
 ## Component Guides
-- Environment setup: [environment-setup.md](environment-setup.md)
+- Environment setup index: [environment-setup.md](environment-setup.md)
+- Auth setup: [auth-setup.md](auth-setup.md)
+- Azure dev deploy: [azure-dev-deploy.md](azure-dev-deploy.md)
+- Azure prod deploy: [azure-prod-deploy.md](azure-prod-deploy.md)
 - API: [api.md](api.md)
 - Domain: [domain.md](domain.md)
 - Infrastructure: [infrastructure.md](infrastructure.md)

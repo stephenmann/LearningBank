@@ -77,8 +77,8 @@ When generating code, default to these choices. Do not introduce alternatives wi
 │   ├── copilot-instructions.md      ← this file
 │   └── workflows/
 │       ├── ci.yml                    ← manually run build, test, lint
-│       ├── deploy-azure.yaml         ← manual deploy using staging slots + swap
-│       └── deploy-azure-noslots.yaml ← manual deploy directly to production
+│       ├── deploy-azure-prod.yaml    ← manual deploy using staging slots + swap
+│       └── deploy-azure-dev.yaml     ← manual deploy directly to production
 ├── src/
 │   ├── LearningBank.Api/             ← ASP.NET Core Web API (.NET 10)
 │   ├── LearningBank.Domain/          ← entities, value objects, domain rules
@@ -202,7 +202,7 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 7. Run `dotnet list package --vulnerable` and `npm audit --omit=dev` — fail on high/critical
 8. CodeQL analysis
 
-**`deploy-azure.yaml`** — runs on manual workflow dispatch from `main`:
+**`deploy-azure-prod.yaml`** — runs on manual workflow dispatch from `main`:
 1. Build API as self-contained Linux x64 publish
 2. Build Next.js as standalone output
 3. Authenticate to Azure via OIDC federated credential (no stored secrets)
@@ -211,7 +211,7 @@ Use DESIGN.md as the source of truth for the design system. When generating code
 6. Deploy web to `learningbank-web` slot `staging`, smoke test, swap to `production`
 7. Post deployment summary to the workflow run
 
-**`deploy-azure-noslots.yaml`** — runs on manual workflow dispatch from `main`:
+**`deploy-azure-dev.yaml`** — runs on manual workflow dispatch from `main`:
 1. Build API and web outputs
 2. Configure production app settings
 3. Run EF Core migrations
