@@ -131,6 +131,19 @@ and connect as the deploy identity.
    directory-read permission is needed — the deploy identity's object id is read
    from its own OIDC token claim.
 3. App Service, APIM, and Front Door naming do not conflict in target subscription.
+4. The required resource providers are registered. The workflow registers them
+   automatically (Microsoft.Sql, Microsoft.Web, Microsoft.KeyVault,
+   Microsoft.ManagedIdentity, Microsoft.OperationalInsights, Microsoft.Insights,
+   Microsoft.ApiManagement, Microsoft.Cdn, Microsoft.Network), which requires
+   the deploy identity to have the `*/register/action` permission at
+   subscription scope (covered by subscription-scope Contributor). If the
+   identity is only scoped to the resource group, register the providers once
+   manually with `az provider register --namespace <ns>`.
+
+> Front Door WAF managed rule sets require the **Premium** Front Door tier. With
+> the Standard tier (the prod default), the WAF policy uses custom rules only;
+> the template omits managed rules automatically unless the SKU is
+> `Premium_AzureFrontDoor`.
 
 ## Deployment Validation
 1. Manually dispatch Deploy Azure Prod from main.

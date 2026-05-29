@@ -193,6 +193,13 @@ var keyVaultUri = enableKeyVault ? (keyVault.?properties.vaultUri ?? '') : ''
 // SQL module provisioned in this same deployment.
 var sqlServerFqdn = enableSql ? sqlServer!.outputs.serverFqdn : ''
 var resolvedSqlDatabaseName = enableSql ? sqlServer!.outputs.databaseName : sqlDatabaseName
+// Null-safe accessors for conditionally-created identities and slots. These
+// resources only exist when their feature flag is set, so dereference with the
+// safe-access operator and coalesce to '' to avoid deployment-time failures.
+var sqlAdminPrincipalId = sqlAdminIdentity.?properties.principalId ?? ''
+var sqlAdminClientId = sqlAdminIdentity.?properties.clientId ?? ''
+var apiSlotPrincipalId = createStagingSlots ? (apiSlot.?outputs.principalId ?? '') : ''
+var webSlotPrincipalId = createStagingSlots ? (webSlot.?outputs.principalId ?? '') : ''
 var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default' : ''
 var apiConnectionStringSetting = apiConnectionString
 var authSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/auth-secret)' : authSecret
@@ -217,7 +224,7 @@ module sqlServer './modules/sql.bicep' = if (enableSql) {
     location: location
     databaseName: sqlDatabaseName
     aadAdminLogin: sqlAdminIdentityName
-    aadAdminObjectId: sqlAdminIdentity.properties.principalId
+    aadAdminObjectId: sqlAdminPrincipalId
     aadAdminPrincipalType: 'Application'
     minCapacity: sqlMinCapacity
     maxVCores: sqlMaxVCores
@@ -522,7 +529,7 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
   name: frontDoorWafPolicyName
   location: 'global'
   sku: {
-    name: 'Standard_AzureFrontDoor'
+    name: frontDoorSkuName
   }
   properties: {
     policySettings: {
@@ -530,14 +537,16 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
       mode: 'Prevention'
       requestBodyCheck: 'Enabled'
     }
-    managedRules: {
+    // Managed rule sets require the Premium Front Door tier. The Standard tier
+    // supports custom rules only, so omit managedRules unless on Premium.
+    managedRules: frontDoorSkuName == 'Premium_AzureFrontDoor' ? {
       managedRuleSets: [
         {
           ruleSetType: 'Microsoft_DefaultRuleSet'
           ruleSetVersion: '2.1'
         }
       ]
-    }
+    } : null
   }
 }
 
@@ -581,7 +590,7 @@ var apiAppSettings = union({
   Auth__WebAppUrl: nextAuthUrl
   Auth__Google__Audience: googleClientId
   Auth__Microsoft__Audience: azureAdClientId
-  Auth__Microsoft__ValidIssuers__0: 'https://login.microsoftonline.com/${azureAdTenantId}/v2.0'
+  Auth__Microsoft__ValidIssuers__0: '${environment().authentication.loginEndpoint}${azureAdTenantId}/v2.0'
 }, enableObservability ? {
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
   ApplicationInsights__ConnectionString: appInsightsConnectionString
@@ -708,10 +717,10 @@ resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (e
     environmentVariables: [
       { name: 'SQL_SERVER', value: sqlServerFqdn }
       { name: 'SQL_DB', value: resolvedSqlDatabaseName }
-      { name: 'UAMI_CLIENT_ID', value: sqlAdminIdentity.properties.clientId }
+      { name: 'UAMI_CLIENT_ID', value: sqlAdminClientId }
       { name: 'API_APP_NAME', value: apiAppName }
       { name: 'API_APP_OBJECT_ID', value: apiApp.outputs.principalId }
-      { name: 'API_SLOT_OBJECT_ID', value: createStagingSlots ? apiSlot.outputs.principalId : '' }
+      { name: 'API_SLOT_OBJECT_ID', value: apiSlotPrincipalId }
       { name: 'DEPLOY_OBJECT_ID', value: deployPrincipalObjectId }
     ]
     scriptContent: '''
@@ -790,7 +799,7 @@ resource apiSlotKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   scope: keyVault
   properties: {
     roleDefinitionId: keyVaultSecretsUserRoleId
-    principalId: apiSlot.outputs.principalId
+    principalId: apiSlotPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -800,7 +809,7 @@ resource webSlotKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   scope: keyVault
   properties: {
     roleDefinitionId: keyVaultSecretsUserRoleId
-    principalId: webSlot.outputs.principalId
+    principalId: webSlotPrincipalId
     principalType: 'ServicePrincipal'
   }
 }

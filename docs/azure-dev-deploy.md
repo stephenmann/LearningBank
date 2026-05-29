@@ -49,6 +49,12 @@ flowchart LR
    directory-read permission is needed — the deploy identity's object id is read
    from its own OIDC token claim.
 3. App names match workflow defaults unless you customize workflow env values.
+4. The required resource providers are registered. The workflow registers them
+   automatically (Microsoft.Sql, Microsoft.Web, Microsoft.KeyVault,
+   Microsoft.ManagedIdentity, Microsoft.OperationalInsights, Microsoft.Insights),
+   which requires the deploy identity to have the `*/register/action` permission
+   at subscription scope. If it is only scoped to the resource group, register
+   the providers once manually with `az provider register --namespace <ns>`.
 
 ## Required GitHub Variables
 - AZURE_CLIENT_ID

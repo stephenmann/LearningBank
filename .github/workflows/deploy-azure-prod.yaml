@@ -56,6 +56,14 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Register Azure resource providers
+        run: |
+          # Idempotent: registers the providers the template uses so a fresh
+          # subscription does not fail with MissingSubscriptionRegistration.
+          for ns in Microsoft.Sql Microsoft.Web Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.OperationalInsights Microsoft.Insights Microsoft.ApiManagement Microsoft.Cdn Microsoft.Network Microsoft.Resources; do
+            az provider register --namespace "$ns" --wait
+          done
+
       - name: Deploy Azure infrastructure (Bicep)
         env:
           API_AUTH_AUTHORITY: ${{ vars.API_AUTH_AUTHORITY }}
