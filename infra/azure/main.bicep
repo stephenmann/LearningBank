@@ -108,9 +108,32 @@ param azureAdTenantId string
 @secure()
 param authSecret string
 
-@description('SQL Server connection string used by API runtime.')
-@secure()
-param apiConnectionString string
+@description('Provision an Azure SQL logical server + serverless database for the API.')
+param enableSql bool = true
+
+@description('Azure SQL logical server name (must be globally unique).')
+param sqlServerName string = 'learningbank-sql'
+
+@description('Azure SQL database name.')
+param sqlDatabaseName string = 'learningbank'
+
+@description('Name of the user-assigned managed identity used as the SQL Entra (AAD) admin.')
+param sqlAdminIdentityName string = 'learningbank-sql-admin'
+
+@description('Serverless database minimum vCores (auto-pause floor).')
+param sqlMinCapacity string = '0.5'
+
+@description('Serverless database maximum vCores.')
+param sqlMaxVCores int = 1
+
+@description('Serverless auto-pause delay in minutes. -1 disables auto-pause.')
+param sqlAutoPauseDelay int = 60
+
+@description('Object ID (SID) of the GitHub deployment service principal, granted DB DDL rights for EF migrations. Leave empty to skip.')
+param deployPrincipalObjectId string = ''
+
+@description('Forces the SQL user-provisioning deployment script to run on every deployment.')
+param sqlSetupRunId string = utcNow()
 
 @description('Provision an Azure Key Vault and source app secrets from it.')
 param enableKeyVault bool = true
@@ -161,22 +184,46 @@ resource azureAdClientSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-
   }
 }
 
-resource apiConnectionStringResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (enableKeyVault) {
-  name: 'api-connection-string'
-  parent: keyVault
-  properties: {
-    value: apiConnectionString
-  }
-}
-
 // Built-in "Key Vault Secrets User" role definition ID.
 var keyVaultSecretsUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 
 var keyVaultUri = enableKeyVault ? (keyVault.?properties.vaultUri ?? '') : ''
-var apiConnectionStringSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/api-connection-string)' : apiConnectionString
+// The connection string is passwordless (managed identity), so it is a plain
+// app setting rather than a Key Vault secret. Server/database come from the
+// SQL module provisioned in this same deployment.
+var sqlServerFqdn = enableSql ? sqlServer!.outputs.serverFqdn : ''
+var resolvedSqlDatabaseName = enableSql ? sqlServer!.outputs.databaseName : sqlDatabaseName
+var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default' : ''
+var apiConnectionStringSetting = apiConnectionString
 var authSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/auth-secret)' : authSecret
 var googleClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/google-client-secret)' : googleClientSecret
 var azureAdClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/azure-ad-client-secret)' : azureAdClientSecret
+
+// --- Azure SQL (passwordless): provisioned here so the FQDN/database name are
+// deployment outputs rather than pre-stored configuration. A user-assigned
+// managed identity is the server's Entra-only admin, which lets the
+// user-provisioning deployment script (below) create the contained database
+// users for the app and deployment identities. ---
+
+resource sqlAdminIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (enableSql) {
+  name: sqlAdminIdentityName
+  location: location
+}
+
+module sqlServer './modules/sql.bicep' = if (enableSql) {
+  name: 'sql'
+  params: {
+    name: sqlServerName
+    location: location
+    databaseName: sqlDatabaseName
+    aadAdminLogin: sqlAdminIdentityName
+    aadAdminObjectId: sqlAdminIdentity.properties.principalId
+    aadAdminPrincipalType: 'Application'
+    minCapacity: sqlMinCapacity
+    maxVCores: sqlMaxVCores
+    autoPauseDelay: sqlAutoPauseDelay
+  }
+}
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = if (enableObservability) {
   name: logAnalyticsWorkspaceName
@@ -636,6 +683,86 @@ module webSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
   }
 }
 
+// --- SQL contained-user provisioning (passwordless): runs as the UAMI SQL
+// admin and creates database users for the app/slot/deploy identities using
+// CREATE USER ... WITH SID (object id), which avoids any Microsoft Graph /
+// Directory Readers dependency. The runtime API identity gets read/write; the
+// deployment identity additionally gets db_ddladmin for EF migrations. ---
+
+resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (enableSql) {
+  name: 'configure-sql-users'
+  location: location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${sqlAdminIdentity.id}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.61.0'
+    forceUpdateTag: sqlSetupRunId
+    retentionInterval: 'PT1H'
+    timeout: 'PT30M'
+    cleanupPreference: 'OnSuccess'
+    environmentVariables: [
+      { name: 'SQL_SERVER', value: sqlServerFqdn }
+      { name: 'SQL_DB', value: resolvedSqlDatabaseName }
+      { name: 'UAMI_CLIENT_ID', value: sqlAdminIdentity.properties.clientId }
+      { name: 'API_APP_NAME', value: apiAppName }
+      { name: 'API_APP_OBJECT_ID', value: apiApp.outputs.principalId }
+      { name: 'API_SLOT_OBJECT_ID', value: createStagingSlots ? apiSlot.outputs.principalId : '' }
+      { name: 'DEPLOY_OBJECT_ID', value: deployPrincipalObjectId }
+    ]
+    scriptContent: '''
+set -euo pipefail
+apk add --no-cache curl bzip2 >/dev/null 2>&1 || true
+
+# Portable SQL client (go-sqlcmd) that supports managed-identity auth directly.
+curl -sSL "https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcmd-linux-amd64.tar.bz2" -o /tmp/sqlcmd.tar.bz2
+mkdir -p /tmp/sqlcmd && tar -xjf /tmp/sqlcmd.tar.bz2 -C /tmp/sqlcmd
+SQLCMD=/tmp/sqlcmd/sqlcmd
+
+# Convert an Entra object id (GUID) into the binary SID Azure SQL expects.
+sid() { python3 -c "import uuid,sys; print(uuid.UUID(sys.argv[1]).bytes_le.hex())" "$1"; }
+
+GRANTS=/tmp/grants.sql
+: > "$GRANTS"
+
+emit() {
+  uname="$1"; objid="$2"; ddl="$3"
+  s=$(sid "$objid")
+  cat >> "$GRANTS" <<EOF
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$uname')
+  CREATE USER [$uname] WITH SID = 0x$s, TYPE = E;
+ALTER ROLE db_datareader ADD MEMBER [$uname];
+ALTER ROLE db_datawriter ADD MEMBER [$uname];
+EOF
+  if [ "$ddl" = "ddl" ]; then echo "ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"; fi
+  echo "GO" >> "$GRANTS"
+}
+
+emit "$API_APP_NAME" "$API_APP_OBJECT_ID" ""
+[ -n "${API_SLOT_OBJECT_ID:-}" ] && emit "${API_APP_NAME}-staging" "$API_SLOT_OBJECT_ID" ""
+[ -n "${DEPLOY_OBJECT_ID:-}" ] && emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
+
+echo "----- grants.sql -----"; cat "$GRANTS"
+
+# Retry to absorb Entra admin / role propagation delay on a fresh server.
+for i in 1 2 3 4 5 6; do
+  if "$SQLCMD" -S "$SQL_SERVER" -d "$SQL_DB" --authentication-method ActiveDirectoryManagedIdentity -U "$UAMI_CLIENT_ID" -i "$GRANTS" -b; then
+    echo "SQL users configured."
+    exit 0
+  fi
+  echo "Attempt $i failed; waiting for propagation..."
+  sleep 20
+done
+echo "Failed to configure SQL users after retries." >&2
+exit 1
+'''
+  }
+}
+
 // --- Key Vault role assignments (H-4): grant each app/slot identity read access to secrets ---
 
 resource apiAppKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableKeyVault) {
@@ -682,3 +809,6 @@ output apiDefaultHostName string = apiApp.outputs.defaultHostName
 output webDefaultHostName string = webApp.outputs.defaultHostName
 output frontDoorHostName string = frontDoorHostName
 output apiManagementGatewayUrl string = apiGatewayUrl
+output sqlServerFqdn string = sqlServerFqdn
+output sqlDatabaseName string = resolvedSqlDatabaseName
+output apiConnectionString string = apiConnectionString

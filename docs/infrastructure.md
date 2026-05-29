@@ -39,7 +39,17 @@ Primary template parameters:
 - azureAdClientSecret (secure)
 - azureAdTenantId
 - authSecret (secure)
-- apiConnectionString (secure)
+- enableSql (provisions Azure SQL server + serverless database; default true)
+- sqlServerName
+- sqlDatabaseName
+- sqlAdminIdentityName (user-assigned identity used as the SQL Entra admin)
+- deployPrincipalObjectId (deploy SP object id, granted db_ddladmin for migrations)
+
+The passwordless API connection string is computed from the provisioned SQL
+server/database and exposed as the `apiConnectionString` deployment output
+(alongside `sqlServerFqdn` and `sqlDatabaseName`). The contained database users
+for the app/slot/deploy identities are created by an in-template deployment
+script that runs as the SQL Entra admin identity.
 
 Automated runtime configuration:
 - API and Web app settings are declared in Bicep and applied during az deployment group create.

@@ -61,9 +61,20 @@ jobs:
           AZURE_AD_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
           AZURE_AD_TENANT_ID: ${{ vars.AZURE_AD_TENANT_ID }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          API_CONNECTION_STRING: ${{ secrets.API_CONNECTION_STRING }}
+          SQL_SERVER_NAME: learningbank-sql-dev
+          SQL_DATABASE_NAME: learningbank
         run: |
+          # The Azure SQL server + database are provisioned by this deployment;
+          # the API uses managed identity (no credentials). The GitHub deploy
+          # identity needs a db_ddladmin user for EF migrations, so pass its
+          # object id to Bicep, which provisions the contained users. The object
+          # id is read from the OIDC token's `oid` claim to avoid any Microsoft
+          # Graph / directory-read permission requirement.
+          DEPLOY_OBJECT_ID=$(az account get-access-token --query accessToken --output tsv \
+            | python3 -c "import sys,json,base64; p=sys.stdin.read().strip().split('.')[1]; p+='='*(-len(p)%4); print(json.loads(base64.urlsafe_b64decode(p))['oid'])")
+          DEPLOY_NAME="lb-dev-$(date +%s)"
           az deployment group create \
+            --name "$DEPLOY_NAME" \
             --resource-group "$RESOURCE_GROUP" \
             --template-file infra/azure/main.bicep \
             --parameters \
@@ -71,6 +82,9 @@ jobs:
               apiAppName="$API_APP_NAME" \
               webAppName="$WEB_APP_NAME" \
               createStagingSlots=false \
+              sqlServerName="$SQL_SERVER_NAME" \
+              sqlDatabaseName="$SQL_DATABASE_NAME" \
+              deployPrincipalObjectId="$DEPLOY_OBJECT_ID" \
               apiAuthAuthority="$API_AUTH_AUTHORITY" \
               apiAuthAudience="$API_AUTH_AUDIENCE" \
               nextAuthUrl="$NEXTAUTH_URL" \
@@ -80,8 +94,12 @@ jobs:
               azureAdClientId="$AZURE_AD_CLIENT_ID" \
               azureAdClientSecret="$AZURE_AD_CLIENT_SECRET" \
               azureAdTenantId="$AZURE_AD_TENANT_ID" \
-              authSecret="$AUTH_SECRET" \
-              apiConnectionString="$API_CONNECTION_STRING"
+              authSecret="$AUTH_SECRET"
+          # Surface the SQL connection details (provisioned above) to later steps.
+          SQL_FQDN=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.sqlServerFqdn.value --output tsv)
+          SQL_DB=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.sqlDatabaseName.value --output tsv)
+          echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
+          echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
 
       - name: Publish API (self-contained linux-x64)
         run: |
@@ -102,11 +120,14 @@ jobs:
           cp -R public .next/standalone/public
 
       - name: Run EF Core migrations against production DB
-        env:
-          ConnectionStrings__SqlServer: ${{ secrets.API_CONNECTION_STRING }}
         run: |
           dotnet tool install --global dotnet-ef
           export PATH="$PATH:$HOME/.dotnet/tools"
+          # SQL_SERVER_FQDN / SQL_DATABASE_NAME come from the Bicep deployment
+          # outputs (set in GITHUB_ENV above). Authenticates as the workflow's
+          # OIDC identity (a db_ddladmin SQL user provisioned by Bicep) via
+          # Active Directory Default — no SQL credentials required.
+          ConnectionStrings__SqlServer="Server=tcp:${SQL_SERVER_FQDN},1433;Initial Catalog=${SQL_DATABASE_NAME};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
           dotnet ef database update \
             --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \

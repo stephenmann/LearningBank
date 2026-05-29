@@ -99,16 +99,38 @@ The workflow passes these production-focused values:
 - API_MANAGEMENT_PUBLISHER_NAME (optional, default fallback exists)
 
 ## Required GitHub Secrets
-- API_CONNECTION_STRING
 - AUTH_SECRET
 - GOOGLE_CLIENT_SECRET
 - AZURE_AD_CLIENT_SECRET
 
+## Database Authentication (Managed Identity)
+The Azure SQL server and serverless database are **provisioned by the Bicep
+deployment** (server `learningbank-sql-prod`, database `learningbank`); their
+FQDN and name are deployment outputs, not stored variables. The API connects
+passwordlessly via its system-assigned managed identity
+(`Authentication=Active Directory Default`); no SQL credentials are stored or
+placed in Key Vault.
+
+A user-assigned managed identity (`learningbank-sql-admin`) is the server's
+Entra-only admin. A Bicep deployment script runs as that identity and creates
+the contained database users automatically:
+- the API app managed identity — `db_datareader` + `db_datawriter`;
+- the API staging-slot managed identity — `db_datareader` + `db_datawriter`;
+- the GitHub deploy service principal — also `db_ddladmin`, for EF migrations.
+
+EF Core migrations read the SQL FQDN/database name from the deployment outputs
+and connect as the deploy identity.
+
 ## Required Azure Prerequisites
 1. Resource group exists.
-2. OIDC deployment identity has Contributor role at resource group scope.
-3. Database exists and is reachable from GitHub-hosted runners.
-4. App Service, APIM, and Front Door naming do not conflict in target subscription.
+2. OIDC deployment identity has both **Contributor** and **User Access
+   Administrator** at resource group scope. Contributor provisions the
+   resources; User Access Administrator is required because the template
+   creates role assignments (the Key Vault Secrets User grants to the app
+   identities). Owner also works in place of both. No Microsoft Graph /
+   directory-read permission is needed — the deploy identity's object id is read
+   from its own OIDC token claim.
+3. App Service, APIM, and Front Door naming do not conflict in target subscription.
 
 ## Deployment Validation
 1. Manually dispatch Deploy Azure Prod from main.
