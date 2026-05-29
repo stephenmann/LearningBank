@@ -58,3 +58,4 @@ resource appSettingsResource 'Microsoft.Web/sites/config@2023-12-01' = {
 
 output id string = app.id
 output defaultHostName string = app.properties.defaultHostName
+output principalId string = enableSystemAssignedIdentity ? app.identity.principalId : ''

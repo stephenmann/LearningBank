@@ -16,9 +16,15 @@ param appCommandLine string = ''
 @description('App settings to apply to the slot.')
 param appSettings object = {}
 
+@description('Set true to enable system-assigned managed identity on the slot.')
+param enableSystemAssignedIdentity bool = true
+
 resource slot 'Microsoft.Web/sites/slots@2023-12-01' = {
   name: '${appName}/${slotName}'
   location: location
+  identity: enableSystemAssignedIdentity ? {
+    type: 'SystemAssigned'
+  } : null
   properties: {
     siteConfig: {
       linuxFxVersion: linuxFxVersion
@@ -38,3 +44,4 @@ resource slotAppSettings 'Microsoft.Web/sites/slots/config@2023-12-01' = {
 }
 
 output id string = slot.id
+output principalId string = enableSystemAssignedIdentity ? slot.identity.principalId : ''

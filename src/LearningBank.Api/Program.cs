@@ -43,6 +43,14 @@ var microsoftAuthority = builder.Configuration["Auth:MicrosoftAuthority"]
     ?? builder.Configuration["Auth:Authority"]
     ?? "https://login.microsoftonline.com/common/v2.0";
 
+// Audiences are the registered OAuth client IDs the API will accept tokens for.
+var googleAudience = builder.Configuration["Auth:Google:Audience"];
+var microsoftAudience = builder.Configuration["Auth:Microsoft:Audience"];
+var googleValidIssuers = builder.Configuration.GetSection("Auth:Google:ValidIssuers").Get<string[]>()
+    ?? ["https://accounts.google.com", "accounts.google.com"];
+var microsoftValidIssuers = builder.Configuration.GetSection("Auth:Microsoft:ValidIssuers").Get<string[]>()
+    ?? [];
+
 JwtBearerEvents BuildJwtEvents() => new()
 {
     OnAuthenticationFailed = ctx =>
@@ -91,16 +99,26 @@ builder.Services.AddAuthentication(options =>
     {
         options.Authority = googleAuthority;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-        options.TokenValidationParameters.ValidateAudience = false;
-        options.TokenValidationParameters.ValidateIssuer = false;
+        options.TokenValidationParameters.ValidateAudience = true;
+        options.TokenValidationParameters.ValidAudiences = string.IsNullOrWhiteSpace(googleAudience)
+            ? null
+            : [googleAudience];
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidIssuers = googleValidIssuers;
         options.Events = BuildJwtEvents();
     })
     .AddJwtBearer(MicrosoftScheme, options =>
     {
         options.Authority = microsoftAuthority;
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
-        options.TokenValidationParameters.ValidateAudience = false;
-        options.TokenValidationParameters.ValidateIssuer = false;
+        options.TokenValidationParameters.ValidateAudience = true;
+        options.TokenValidationParameters.ValidAudiences = string.IsNullOrWhiteSpace(microsoftAudience)
+            ? null
+            : [microsoftAudience];
+        // Microsoft "common"/"organizations" authorities issue per-tenant issuers, so the
+        // accepted issuers must be enumerated explicitly rather than inferred from metadata.
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidIssuers = microsoftValidIssuers;
         options.Events = BuildJwtEvents();
     });
 
@@ -116,13 +134,28 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(lifetime: ServiceLifetime.Scoped);
 
 // ── CORS ───────────────────────────────────────────────────────────────────────
+// The API authenticates via the Authorization: Bearer header (not ambient cookies), so
+// cross-site requests cannot attach credentials — this is the CSRF mitigation. Allowed
+// methods/headers are restricted to what the SPA actually uses.
 var webAppOrigin = builder.Configuration["Auth:WebAppUrl"] ?? "http://localhost:3000";
 builder.Services.AddCors(cors =>
     cors.AddDefaultPolicy(p => p
         .WithOrigins(webAppOrigin)
-        .AllowAnyHeader()
-        .AllowAnyMethod()
+        .WithHeaders("Authorization", "Content-Type")
+        .WithMethods("GET", "POST", "DELETE")
         .AllowCredentials()));
+
+// ── Forwarded headers ─────────────────────────────────────────────────────────
+// Behind Azure App Service / Front Door the real client IP arrives in X-Forwarded-For.
+// Honor it so the rate limiter partitions per real client rather than the proxy address.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+        | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 builder.Services.AddRateLimiter(options =>
@@ -174,14 +207,18 @@ else
         }));
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseCors();
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+// Rate limiting runs after authentication so the per-user partition key (User.Identity.Name)
+// is populated; unauthenticated requests fall back to the forwarded client IP.
+app.UseRateLimiter();
 
 // ── Route groups ──────────────────────────────────────────────────────────────
 var api = app.MapGroup("/api/v1");
+api.AddEndpointFilter<LearningBank.Api.Validators.ValidationEndpointFilter>();
 api.MapUserEndpoints();
 api.MapCategoryEndpoints();
 api.MapAccountEndpoints();

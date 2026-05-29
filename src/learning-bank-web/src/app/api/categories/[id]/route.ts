@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { apiRequest } from "@/lib/api-client";
+import { errorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 
 async function getToken(): Promise<string> {
@@ -18,7 +19,6 @@ export async function PUT(
     const data = await apiRequest(`/categories/${id}`, { method: "PUT", body: JSON.stringify(body) }, token);
     return NextResponse.json(data);
   } catch (e: unknown) {
-    const err = e as { status?: number; message?: string };
-    return NextResponse.json({ error: err.message }, { status: err.status ?? 500 });
+    return errorResponse(e);
   }
 }

@@ -42,6 +42,16 @@ public sealed class LearningBankClaimsTransformer : IClaimsTransformation
              ?? principal.FindFirst("upn")?.Value
              ?? $"{sub}@placeholder.local";
 
+        // Only a provider-verified email may be used to claim a pre-provisioned (pending)
+        // account. preferred_username/upn are display identifiers and are NOT guaranteed to be
+        // verified email addresses on all Microsoft account types, so they must not be used for
+        // matching pending children/parents (prevents account takeover via a chosen UPN).
+        var emailVerified = principal.FindFirst("email_verified")?.Value;
+        var isEmailVerified = !string.Equals(emailVerified, "false", StringComparison.OrdinalIgnoreCase);
+        var verifiedEmail = isEmailVerified
+            ? (principal.FindFirst(ClaimTypes.Email)?.Value ?? principal.FindFirst("email")?.Value)
+            : null;
+
         var name = principal.FindFirst(ClaimTypes.Name)?.Value
             ?? principal.FindFirst("name")?.Value
             ?? principal.FindFirst("preferred_username")?.Value
@@ -51,7 +61,9 @@ public sealed class LearningBankClaimsTransformer : IClaimsTransformation
         provider = provider.Contains("google") ? "Google" : "Microsoft";
 
         var user = await _users.FindByExternalIdAsync(sub, provider);
-        var pendingChildByEmail = await _users.FindPendingChildByEmailAsync(email);
+        var pendingChildByEmail = verifiedEmail is not null
+            ? await _users.FindPendingChildByEmailAsync(verifiedEmail)
+            : null;
 
         if (user is not null && pendingChildByEmail is not null && user.Role == UserRole.Parent)
         {
@@ -76,7 +88,9 @@ public sealed class LearningBankClaimsTransformer : IClaimsTransformation
 
         if (user is null)
         {
-            var pendingParentByEmail = await _users.FindByEmailAsync(email);
+            var pendingParentByEmail = verifiedEmail is not null
+                ? await _users.FindByEmailAsync(verifiedEmail)
+                : null;
             if (pendingParentByEmail is not null
                 && pendingParentByEmail.Role == UserRole.Parent
                 && pendingParentByEmail.Provider.Equals("Pending", StringComparison.OrdinalIgnoreCase))

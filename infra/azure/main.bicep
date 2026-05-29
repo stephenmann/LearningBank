@@ -112,6 +112,72 @@ param authSecret string
 @secure()
 param apiConnectionString string
 
+@description('Provision an Azure Key Vault and source app secrets from it.')
+param enableKeyVault bool = true
+
+@description('Key Vault name (must be globally unique, 3-24 chars).')
+param keyVaultName string = 'learningbank-kv'
+
+// --- Key Vault (H-4): central secret store referenced by App Service via managed identity ---
+
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = if (enableKeyVault) {
+  name: keyVaultName
+  location: location
+  properties: {
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
+    tenantId: subscription().tenantId
+    enableRbacAuthorization: true
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 7
+    enablePurgeProtection: true
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
+resource authSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (enableKeyVault) {
+  name: 'auth-secret'
+  parent: keyVault
+  properties: {
+    value: authSecret
+  }
+}
+
+resource googleClientSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (enableKeyVault) {
+  name: 'google-client-secret'
+  parent: keyVault
+  properties: {
+    value: googleClientSecret
+  }
+}
+
+resource azureAdClientSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (enableKeyVault) {
+  name: 'azure-ad-client-secret'
+  parent: keyVault
+  properties: {
+    value: azureAdClientSecret
+  }
+}
+
+resource apiConnectionStringResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (enableKeyVault) {
+  name: 'api-connection-string'
+  parent: keyVault
+  properties: {
+    value: apiConnectionString
+  }
+}
+
+// Built-in "Key Vault Secrets User" role definition ID.
+var keyVaultSecretsUserRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+
+var keyVaultUri = enableKeyVault ? (keyVault.?properties.vaultUri ?? '') : ''
+var apiConnectionStringSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/api-connection-string)' : apiConnectionString
+var authSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/auth-secret)' : authSecret
+var googleClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/google-client-secret)' : googleClientSecret
+var azureAdClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/azure-ad-client-secret)' : azureAdClientSecret
+
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = if (enableObservability) {
   name: logAnalyticsWorkspaceName
   location: location
@@ -460,11 +526,15 @@ var calculatedPublicApiUrl = enableFrontDoor ? 'https://${frontDoorHostName}/api
 
 var apiAppSettings = union({
   ASPNETCORE_ENVIRONMENT: 'Production'
+  AllowedHosts: '${apiAppName}.azurewebsites.net'
   Database__Provider: 'SqlServer'
-  ConnectionStrings__SqlServer: apiConnectionString
+  ConnectionStrings__SqlServer: apiConnectionStringSetting
   Auth__Authority: apiAuthAuthority
   Auth__Audience: apiAuthAudience
   Auth__WebAppUrl: nextAuthUrl
+  Auth__Google__Audience: googleClientId
+  Auth__Microsoft__Audience: azureAdClientId
+  Auth__Microsoft__ValidIssuers__0: 'https://login.microsoftonline.com/${azureAdTenantId}/v2.0'
 }, enableObservability ? {
   APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
   ApplicationInsights__ConnectionString: appInsightsConnectionString
@@ -472,11 +542,11 @@ var apiAppSettings = union({
 
 var webAppSettings = union({
   NODE_ENV: 'production'
-  AUTH_SECRET: authSecret
+  AUTH_SECRET: authSecretSetting
   GOOGLE_CLIENT_ID: googleClientId
-  GOOGLE_CLIENT_SECRET: googleClientSecret
+  GOOGLE_CLIENT_SECRET: googleClientSecretSetting
   AZURE_AD_CLIENT_ID: azureAdClientId
-  AZURE_AD_CLIENT_SECRET: azureAdClientSecret
+  AZURE_AD_CLIENT_SECRET: azureAdClientSecretSetting
   AZURE_AD_TENANT_ID: azureAdTenantId
   NEXTAUTH_URL: nextAuthUrl
   NEXT_PUBLIC_API_URL: calculatedPublicApiUrl
@@ -563,6 +633,48 @@ module webSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
     slotName: slotName
     linuxFxVersion: 'NODE|22-lts'
     appSettings: webAppSettings
+  }
+}
+
+// --- Key Vault role assignments (H-4): grant each app/slot identity read access to secrets ---
+
+resource apiAppKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableKeyVault) {
+  name: guid(keyVault.id, apiAppName, keyVaultSecretsUserRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: keyVaultSecretsUserRoleId
+    principalId: apiApp.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource webAppKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableKeyVault) {
+  name: guid(keyVault.id, webAppName, keyVaultSecretsUserRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: keyVaultSecretsUserRoleId
+    principalId: webApp.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource apiSlotKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableKeyVault && createStagingSlots) {
+  name: guid(keyVault.id, apiAppName, slotName, keyVaultSecretsUserRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: keyVaultSecretsUserRoleId
+    principalId: apiSlot.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource webSlotKvAccess 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableKeyVault && createStagingSlots) {
+  name: guid(keyVault.id, webAppName, slotName, keyVaultSecretsUserRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: keyVaultSecretsUserRoleId
+    principalId: webSlot.outputs.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 

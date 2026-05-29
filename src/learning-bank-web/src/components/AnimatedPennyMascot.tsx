@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import { memo, useEffect, useRef, useState } from "react";
 
 const MIN_BLINK_GAP_MS = 5000;
@@ -84,8 +85,13 @@ function AnimatedPennyMascotInner() {
       }
 
       const svgText = await response.text();
+      // Sanitize before injecting via dangerouslySetInnerHTML to remove any
+      // script/event-handler content (defense-in-depth against a tampered asset).
+      const sanitized = DOMPurify.sanitize(svgText, {
+        USE_PROFILES: { svg: true, svgFilters: true },
+      });
       if (isActive) {
-        setSvgMarkup(svgText);
+        setSvgMarkup(sanitized);
       }
     }
 

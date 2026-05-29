@@ -61,6 +61,9 @@ public sealed class LearningBankClaimsTransformerTests
     private sealed class FakeUnitOfWork : IUnitOfWork
     {
         public Task<int> SaveChangesAsync(CancellationToken ct = default) => Task.FromResult(0);
+
+        public Task<T> ExecuteSerializableAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken ct = default)
+            => operation(ct);
     }
 
     private sealed class FakeUserRepository : IUserRepository

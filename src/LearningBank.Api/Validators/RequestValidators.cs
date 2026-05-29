@@ -3,12 +3,24 @@ using LearningBank.Api.Dtos;
 
 namespace LearningBank.Api.Validators;
 
+internal static class MoneyRules
+{
+    /// <summary>Upper bound for any single monetary amount (USD). Defends against absurd values.</summary>
+    public const decimal MaxAmount = 1_000_000m;
+
+    public static IRuleBuilderOptions<T, decimal> ValidMoney<T>(this IRuleBuilder<T, decimal> rule)
+        => rule
+            .GreaterThan(0).WithMessage("Amount must be positive.")
+            .LessThanOrEqualTo(MaxAmount).WithMessage($"Amount must not exceed {MaxAmount:N0}.")
+            .PrecisionScale(18, 2, ignoreTrailingZeros: true).WithMessage("Amount must have at most 2 decimal places.");
+}
+
 public sealed class CreateDepositValidator : AbstractValidator<CreateDepositRequest>
 {
     public CreateDepositValidator()
     {
         RuleFor(x => x.ChildId).NotEmpty();
-        RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Amount must be positive.");
+        RuleFor(x => x.Amount).ValidMoney();
         RuleFor(x => x.Description).MaximumLength(500);
         RuleFor(x => x.CategoryId).NotEmpty();
     }
@@ -19,7 +31,7 @@ public sealed class CreateWithdrawalValidator : AbstractValidator<CreateWithdraw
     public CreateWithdrawalValidator()
     {
         RuleFor(x => x.ChildId).NotEmpty();
-        RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Amount must be positive.");
+        RuleFor(x => x.Amount).ValidMoney();
         RuleFor(x => x.Description).NotEmpty().MaximumLength(500);
     }
 }
@@ -37,7 +49,7 @@ public sealed class CreateTransferToSavingsValidator : AbstractValidator<CreateT
     public CreateTransferToSavingsValidator()
     {
         RuleFor(x => x.ChildId).NotEmpty();
-        RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Amount must be positive.");
+        RuleFor(x => x.Amount).ValidMoney();
         RuleFor(x => x.Description).MaximumLength(500);
     }
 }
@@ -46,7 +58,7 @@ public sealed class CreateSavingsWithdrawalRequestValidator : AbstractValidator<
 {
     public CreateSavingsWithdrawalRequestValidator()
     {
-        RuleFor(x => x.Amount).GreaterThan(0).WithMessage("Amount must be positive.");
+        RuleFor(x => x.Amount).ValidMoney();
         RuleFor(x => x.Note).MaximumLength(500);
     }
 }
@@ -91,7 +103,7 @@ public sealed class CreateLearningTaskValidator : AbstractValidator<CreateLearni
     {
         RuleFor(x => x.ChildId).NotEmpty();
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.MonetaryValue).GreaterThan(0).WithMessage("Monetary value must be positive.");
+        RuleFor(x => x.MonetaryValue).ValidMoney().WithName("MonetaryValue");
         RuleFor(x => x.CategoryId).NotEmpty();
         RuleFor(x => x.TargetAccount).NotEmpty();
         RuleFor(x => x.RecurrenceType).NotEmpty();
@@ -118,7 +130,7 @@ public sealed class UpdateLearningTaskValidator : AbstractValidator<UpdateLearni
     public UpdateLearningTaskValidator()
     {
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.MonetaryValue).GreaterThan(0).WithMessage("Monetary value must be positive.");
+        RuleFor(x => x.MonetaryValue).ValidMoney().WithName("MonetaryValue");
         RuleFor(x => x.CategoryId).NotEmpty();
         RuleFor(x => x.TargetAccount).NotEmpty();
         RuleFor(x => x.RecurrenceType).NotEmpty();

@@ -31,7 +31,7 @@ public static class TransactionEndpoints
             .WithName("CheckingToSavings");
 
         group.MapPost("/transfers/savings-to-checking", RequestSavingsToChecking)
-            .RequireAuthorization()
+            .RequireAuthorization(AuthHelpers.ChildPolicy)
             .WithName("RequestSavingsToChecking");
 
         group.MapGet("/transfers/requests/pending", GetPendingRequests)
@@ -179,14 +179,20 @@ public static class TransactionEndpoints
         if (role == nameof(UserRole.Parent) && !await userRepo.IsLinkedToChildAsync(actorId, req.ChildId, ct))
             return TypedResults.Forbid();
 
-        var existing = await txRepo.GetForChildAsync(req.ChildId, ct);
-
         try
         {
-            var (debit, credit) = AccountService.CheckingToSavings(existing, req.ChildId, req.Amount, req.Description ?? string.Empty);
-            await txRepo.AddRangeAsync([debit, credit], ct);
-            await uow.SaveChangesAsync(ct);
-            return TypedResults.Created($"/api/v1/transactions/{debit.Id}");
+            // Serializable transaction so the overdraft check (read balance → validate → write)
+            // is atomic against concurrent transfers/approvals (Domain Rule 4).
+            var debitId = await uow.ExecuteSerializableAsync(async token =>
+            {
+                var existing = await txRepo.GetForChildAsync(req.ChildId, token);
+                var (debit, credit) = AccountService.CheckingToSavings(existing, req.ChildId, req.Amount, req.Description ?? string.Empty);
+                await txRepo.AddRangeAsync([debit, credit], token);
+                await uow.SaveChangesAsync(token);
+                return debit.Id;
+            }, ct);
+
+            return TypedResults.Created($"/api/v1/transactions/{debitId}");
         }
         catch (InsufficientFundsException ex)
         {
@@ -257,33 +263,40 @@ public static class TransactionEndpoints
         if (!await userRepo.IsLinkedToChildAsync(parentId, transferReq.ChildId, ct))
             return TypedResults.Forbid();
 
-        if (req.Approve)
+        try
         {
-            var existing = await txRepo.GetForChildAsync(transferReq.ChildId, ct);
-            try
+            // Serializable transaction so an approval's overdraft check is atomic against
+            // concurrent transfers/approvals on the same account (Domain Rule 4).
+            await uow.ExecuteSerializableAsync(async token =>
             {
-                var (debit, credit) = AccountService.SavingsToChecking(
-                    existing, transferReq.ChildId, transferReq.Amount, "Savings withdrawal approved");
-                transferReq.Approve(parentId, req.ReviewNote);
-                await txRepo.AddRangeAsync([debit, credit], ct);
-            }
-            catch (InsufficientFundsException ex)
-            {
-                return TypedResults.Problem(ex.Message, statusCode: 422);
-            }
+                if (req.Approve)
+                {
+                    var existing = await txRepo.GetForChildAsync(transferReq.ChildId, token);
+                    var (debit, credit) = AccountService.SavingsToChecking(
+                        existing, transferReq.ChildId, transferReq.Amount, "Savings withdrawal approved");
+                    transferReq.Approve(parentId, req.ReviewNote);
+                    await txRepo.AddRangeAsync([debit, credit], token);
+                }
+                else
+                {
+                    transferReq.Reject(parentId, req.ReviewNote);
+                }
+
+                await auditRepo.AddAsync(AuditLog.Create(
+                    parentId,
+                    req.Approve ? "ApproveTransfer" : "RejectTransfer",
+                    nameof(TransferRequest),
+                    transferReq.Id), token);
+
+                await uow.SaveChangesAsync(token);
+                return 0;
+            }, ct);
         }
-        else
+        catch (InsufficientFundsException ex)
         {
-            transferReq.Reject(parentId, req.ReviewNote);
+            return TypedResults.Problem(ex.Message, statusCode: 422);
         }
 
-        await auditRepo.AddAsync(AuditLog.Create(
-            parentId,
-            req.Approve ? "ApproveTransfer" : "RejectTransfer",
-            nameof(TransferRequest),
-            transferReq.Id), ct);
-
-        await uow.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
 
