@@ -87,6 +87,15 @@ param frontDoorWwwDomainHostName string = 'www.mylearningbank.com'
 @description('Azure DNS zone resource ID used for Front Door managed custom domains.')
 param frontDoorDnsZoneResourceId string = ''
 
+@description('Set true to create Front Door custom domains. Set false to reference already-existing custom domains.')
+param frontDoorCreateCustomDomains bool = false
+
+@description('Existing or desired Front Door custom domain resource name for the root domain.')
+param frontDoorRootCustomDomainName string = 'mylearningbank-com-c8a3'
+
+@description('Existing or desired Front Door custom domain resource name for the www domain.')
+param frontDoorWwwCustomDomainName string = 'www-mylearningbank-com-5935'
+
 @description('API auth authority URL.')
 param apiAuthAuthority string
 
@@ -521,8 +530,8 @@ resource apiOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = if
   }
 }
 
-resource frontDoorRootCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-01' = if (enableFrontDoor && enableFrontDoorCustomDomains) {
-  name: replace(frontDoorRootDomainHostName, '.', '-')
+resource frontDoorRootCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-01' = if (enableFrontDoor && enableFrontDoorCustomDomains && frontDoorCreateCustomDomains) {
+  name: frontDoorRootCustomDomainName
   parent: frontDoorProfile
   properties: {
     hostName: frontDoorRootDomainHostName
@@ -536,8 +545,8 @@ resource frontDoorRootCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02
   }
 }
 
-resource frontDoorWwwCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-01' = if (enableFrontDoor && enableFrontDoorCustomDomains) {
-  name: replace(frontDoorWwwDomainHostName, '.', '-')
+resource frontDoorWwwCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-01' = if (enableFrontDoor && enableFrontDoorCustomDomains && frontDoorCreateCustomDomains) {
+  name: frontDoorWwwCustomDomainName
   parent: frontDoorProfile
   properties: {
     hostName: frontDoorWwwDomainHostName
@@ -551,12 +560,25 @@ resource frontDoorWwwCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-
   }
 }
 
+resource frontDoorRootCustomDomainExisting 'Microsoft.Cdn/profiles/customDomains@2024-02-01' existing = if (enableFrontDoor && enableFrontDoorCustomDomains && !frontDoorCreateCustomDomains) {
+  name: frontDoorRootCustomDomainName
+  parent: frontDoorProfile
+}
+
+resource frontDoorWwwCustomDomainExisting 'Microsoft.Cdn/profiles/customDomains@2024-02-01' existing = if (enableFrontDoor && enableFrontDoorCustomDomains && !frontDoorCreateCustomDomains) {
+  name: frontDoorWwwCustomDomainName
+  parent: frontDoorProfile
+}
+
+var frontDoorRootCustomDomainId = frontDoorCreateCustomDomains ? frontDoorRootCustomDomain.id : frontDoorRootCustomDomainExisting.id
+var frontDoorWwwCustomDomainId = frontDoorCreateCustomDomains ? frontDoorWwwCustomDomain.id : frontDoorWwwCustomDomainExisting.id
+
 var webRouteCustomDomains = enableFrontDoorCustomDomains ? [
   {
-    id: frontDoorRootCustomDomain.id
+    id: frontDoorRootCustomDomainId
   }
   {
-    id: frontDoorWwwCustomDomain.id
+    id: frontDoorWwwCustomDomainId
   }
 ] : []
 
@@ -565,10 +587,10 @@ var frontDoorWafAssociationDomains = enableFrontDoorCustomDomains ? [
     id: frontDoorEndpoint.id
   }
   {
-    id: frontDoorRootCustomDomain.id
+    id: frontDoorRootCustomDomainId
   }
   {
-    id: frontDoorWwwCustomDomain.id
+    id: frontDoorWwwCustomDomainId
   }
 ] : [
   {
@@ -634,7 +656,7 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
     customRules: {
       rules: [
         {
-          name: 'block-non-us'
+          name: 'blocknonus'
           enabledState: 'Enabled'
           priority: 100
           ruleType: 'MatchRule'
@@ -651,7 +673,7 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
           ]
         }
         {
-          name: 'rate-limit-api-auth'
+          name: 'ratelimitapiauth'
           enabledState: 'Enabled'
           priority: 200
           ruleType: 'RateLimitRule'
@@ -669,7 +691,7 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
           ]
         }
         {
-          name: 'rate-limit-api-general'
+          name: 'ratelimitapigeneral'
           enabledState: 'Enabled'
           priority: 210
           ruleType: 'RateLimitRule'
@@ -687,7 +709,7 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
           ]
         }
         {
-          name: 'block-common-bot-user-agents'
+          name: 'blockcommonbotuseragents'
           enabledState: 'Enabled'
           priority: 300
           ruleType: 'MatchRule'
