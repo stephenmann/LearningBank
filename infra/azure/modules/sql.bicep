@@ -30,12 +30,22 @@ param minCapacity string = '0.5'
 @description('Idle minutes before the serverless database auto-pauses. -1 disables auto-pause.')
 param autoPauseDelay int = 60
 
+@description('Optional user-assigned managed identity resource ID to attach as the SQL logical server identity.')
+param userAssignedIdentityResourceId string = ''
+
 // Entra-only authentication: no SQL logins/passwords exist on this server.
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: name
   location: location
+  identity: !empty(userAssignedIdentityResourceId) ? {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentityResourceId}': {}
+    }
+  } : null
   properties: {
     minimalTlsVersion: '1.2'
+    primaryUserAssignedIdentityId: !empty(userAssignedIdentityResourceId) ? userAssignedIdentityResourceId : null
     publicNetworkAccess: 'Enabled'
     administrators: {
       administratorType: 'ActiveDirectory'

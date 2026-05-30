@@ -154,6 +154,30 @@ jobs:
           echo "API_SQL_IDENTITY_PRINCIPAL_ID=$API_SQL_IDENTITY_PRINCIPAL_ID" >> "$GITHUB_ENV"
           echo "API_SQL_IDENTITY_CLIENT_ID=$API_SQL_IDENTITY_CLIENT_ID" >> "$GITHUB_ENV"
 
+      - name: Validate SQL server identity is configured
+        run: |
+          set -euo pipefail
+          SQL_IDENTITY_TYPE=$(az sql server show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$SQL_SERVER_NAME" \
+            --query identity.type \
+            --output tsv)
+          SQL_PRIMARY_UAMI=$(az sql server show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$SQL_SERVER_NAME" \
+            --query primaryUserAssignedIdentityId \
+            --output tsv)
+
+          if [ "$SQL_IDENTITY_TYPE" != "UserAssigned" ]; then
+            echo "SQL logical server identity is not configured as UserAssigned." >&2
+            exit 1
+          fi
+
+          if [ -z "$SQL_PRIMARY_UAMI" ] || [ "$SQL_PRIMARY_UAMI" = "null" ]; then
+            echo "SQL logical server primary user-assigned identity is missing." >&2
+            exit 1
+          fi
+
       - name: Validate API SQL auth mode is Managed Identity
         run: |
           set -euo pipefail

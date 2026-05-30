@@ -250,6 +250,7 @@ module sqlServer './modules/sql.bicep' = if (enableSql) {
     minCapacity: sqlMinCapacity
     maxVCores: sqlMaxVCores
     autoPauseDelay: sqlAutoPauseDelay
+    userAssignedIdentityResourceId: sqlAdminIdentity.id
   }
 }
 
