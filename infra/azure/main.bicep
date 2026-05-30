@@ -673,6 +673,9 @@ module webApp './modules/web-app.bicep' = {
 
 module apiSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
   name: 'apiSlot'
+  dependsOn: [
+    apiApp
+  ]
   params: {
     appName: apiAppName
     location: location
@@ -684,6 +687,9 @@ module apiSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
 
 module webSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
   name: 'webSlot'
+  dependsOn: [
+    webApp
+  ]
   params: {
     appName: webAppName
     location: location
