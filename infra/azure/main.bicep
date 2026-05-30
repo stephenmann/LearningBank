@@ -73,7 +73,7 @@ param frontDoorEndpointName string = 'learningbank-edge'
 param frontDoorSkuName string = 'Standard_AzureFrontDoor'
 
 @description('Front Door Web Application Firewall policy name.')
-param frontDoorWafPolicyName string = 'learningbank-fd-waf'
+param frontDoorWafPolicyName string = 'learningBankFdWaf'
 
 @description('API auth authority URL.')
 param apiAuthAuthority string
@@ -221,7 +221,7 @@ module sqlServer './modules/sql.bicep' = if (enableSql) {
   name: 'sql'
   params: {
     name: sqlServerName
-    location: location
+    location: 'centralus'
     databaseName: sqlDatabaseName
     aadAdminLogin: sqlAdminIdentityName
     aadAdminObjectId: sqlAdminPrincipalId
