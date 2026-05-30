@@ -203,24 +203,21 @@ jobs:
             exit 1
           fi
 
-          sid() { python3 -c "import uuid,sys; print(uuid.UUID(sys.argv[1]).bytes_le.hex())" "$1"; }
-
           GRANTS=/tmp/grants.sql
           : > "$GRANTS"
 
           emit() {
             uname="$1"; objid="$2"; ddl="$3"
-            s=$(sid "$objid")
             printf "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'%s')\n" "$uname" >> "$GRANTS"
-            printf "  CREATE USER [%s] WITH SID = 0x%s, TYPE = E;\n" "$uname" "$s" >> "$GRANTS"
+            printf "  CREATE USER [%s] WITH SID = CONVERT(varbinary(16), CAST('%s' AS uniqueidentifier)), TYPE = E;\n" "$uname" "$objid" >> "$GRANTS"
             printf "ALTER ROLE db_datareader ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
             printf "ALTER ROLE db_datawriter ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
             if [ "$ddl" = "ddl" ]; then echo "ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"; fi
             echo "GO" >> "$GRANTS"
           }
 
-          emit "$API_APP_NAME" "$API_APP_OBJECT_ID" ""
-          emit "${API_APP_NAME}-${SLOT_NAME}" "$API_SLOT_OBJECT_ID" ""
+          emit "$API_APP_NAME" "$API_APP_OBJECT_ID" "ddl"
+          emit "${API_APP_NAME}-${SLOT_NAME}" "$API_SLOT_OBJECT_ID" "ddl"
           emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
 
           echo "----- grants.sql -----"
@@ -236,6 +233,66 @@ jobs:
           done
           echo "Failed to configure SQL users after retries." >&2
           exit 1
+
+      - name: Verify SQL principal mapping for API managed identities
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcmd-linux-amd64.tar.bz2" -o /tmp/sqlcmd.tar.bz2
+          mkdir -p /tmp/sqlcmd && tar -xjf /tmp/sqlcmd.tar.bz2 -C /tmp/sqlcmd
+          SQLCMD=/tmp/sqlcmd/sqlcmd
+
+          API_APP_OBJECT_ID=$(az webapp identity show --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME" --query principalId --output tsv)
+          API_SLOT_OBJECT_ID=$(az webapp identity show --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME" --slot "$SLOT_NAME" --query principalId --output tsv)
+
+          VERIFY=/tmp/verify-principals.sql
+          cat > "$VERIFY" <<EOF
+DECLARE @missing int = 0;
+
+IF NOT EXISTS (
+  SELECT 1
+  FROM sys.database_principals
+  WHERE name = N'$API_APP_NAME'
+    AND sid = CONVERT(varbinary(16), CAST('$API_APP_OBJECT_ID' AS uniqueidentifier))
+)
+BEGIN
+  SET @missing = @missing + 1;
+  PRINT 'Missing/mismatched principal: $API_APP_NAME';
+END
+
+IF NOT EXISTS (
+  SELECT 1
+  FROM sys.database_principals
+  WHERE name = N'${API_APP_NAME}-${SLOT_NAME}'
+    AND sid = CONVERT(varbinary(16), CAST('$API_SLOT_OBJECT_ID' AS uniqueidentifier))
+)
+BEGIN
+  SET @missing = @missing + 1;
+  PRINT 'Missing/mismatched principal: ${API_APP_NAME}-${SLOT_NAME}';
+END
+
+IF NOT EXISTS (
+  SELECT 1
+  FROM sys.database_principals
+  WHERE name = N'github-deploy'
+    AND sid = CONVERT(varbinary(16), CAST('$DEPLOY_OBJECT_ID' AS uniqueidentifier))
+)
+BEGIN
+  SET @missing = @missing + 1;
+  PRINT 'Missing/mismatched principal: github-deploy';
+END
+
+IF @missing > 0
+BEGIN
+  THROW 50000, 'SQL contained user verification failed.', 1;
+END
+
+SELECT p.name, p.type_desc
+FROM sys.database_principals p
+WHERE p.name IN (N'$API_APP_NAME', N'${API_APP_NAME}-${SLOT_NAME}', N'github-deploy')
+ORDER BY p.name;
+EOF
+
+          "$SQLCMD" -S "$SQL_SERVER_FQDN" -d "$SQL_DATABASE_NAME" --authentication-method ActiveDirectoryDefault -i "$VERIFY" -b
 
       - name: Publish API (self-contained linux-x64)
         run: |
