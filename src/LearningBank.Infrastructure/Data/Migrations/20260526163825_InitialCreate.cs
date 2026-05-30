@@ -15,14 +15,14 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "AuditLogs",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ActorId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Action = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    EntityType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    EntityId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Before = table.Column<string>(type: "TEXT", nullable: true),
-                    After = table.Column<string>(type: "TEXT", nullable: true),
-                    OccurredAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(nullable: false),
+                    ActorId = table.Column<Guid>(nullable: false),
+                    Action = table.Column<string>(maxLength: 100, nullable: false),
+                    EntityType = table.Column<string>(maxLength: 100, nullable: false),
+                    EntityId = table.Column<Guid>(nullable: false),
+                    Before = table.Column<string>(nullable: true),
+                    After = table.Column<string>(nullable: true),
+                    OccurredAt = table.Column<DateTimeOffset>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,11 +33,11 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "Categories",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    IsChildAllowed = table.Column<bool>(type: "INTEGER", nullable: false),
-                    IsArchived = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(nullable: false),
+                    Name = table.Column<string>(maxLength: 100, nullable: false),
+                    IsChildAllowed = table.Column<bool>(nullable: false),
+                    IsArchived = table.Column<bool>(nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -48,14 +48,14 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ExternalId = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Provider = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Email = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    DisplayName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Role = table.Column<int>(type: "INTEGER", nullable: false),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(nullable: false),
+                    ExternalId = table.Column<string>(maxLength: 256, nullable: false),
+                    Provider = table.Column<string>(maxLength: 50, nullable: false),
+                    Email = table.Column<string>(maxLength: 256, nullable: false),
+                    DisplayName = table.Column<string>(maxLength: 256, nullable: false),
+                    Role = table.Column<int>(nullable: false),
+                    IsActive = table.Column<bool>(nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -66,10 +66,10 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "ChildLinks",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ParentId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ChildId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    LinkedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Id = table.Column<Guid>(nullable: false),
+                    ParentId = table.Column<Guid>(nullable: false),
+                    ChildId = table.Column<Guid>(nullable: false),
+                    LinkedAt = table.Column<DateTimeOffset>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -92,16 +92,16 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "Transactions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ChildId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Account = table.Column<int>(type: "INTEGER", nullable: false),
-                    Type = table.Column<int>(type: "INTEGER", nullable: false),
+                    Id = table.Column<Guid>(nullable: false),
+                    ChildId = table.Column<Guid>(nullable: false),
+                    Account = table.Column<int>(nullable: false),
+                    Type = table.Column<int>(nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
-                    CategoryId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    RelatedTransactionId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    EnteredByParentId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    PostedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+                    Description = table.Column<string>(maxLength: 500, nullable: false),
+                    CategoryId = table.Column<Guid>(nullable: true),
+                    RelatedTransactionId = table.Column<Guid>(nullable: true),
+                    EnteredByParentId = table.Column<Guid>(nullable: true),
+                    PostedAt = table.Column<DateTimeOffset>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -124,15 +124,15 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "TransferRequests",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ChildId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Id = table.Column<Guid>(nullable: false),
+                    ChildId = table.Column<Guid>(nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
-                    Note = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false),
-                    ReviewedByParentId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    ReviewNote = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    RequestedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    ReviewedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true)
+                    Note = table.Column<string>(maxLength: 500, nullable: false),
+                    Status = table.Column<int>(nullable: false),
+                    ReviewedByParentId = table.Column<Guid>(nullable: true),
+                    ReviewNote = table.Column<string>(maxLength: 500, nullable: true),
+                    RequestedAt = table.Column<DateTimeOffset>(nullable: false),
+                    ReviewedAt = table.Column<DateTimeOffset>(nullable: true)
                 },
                 constraints: table =>
                 {

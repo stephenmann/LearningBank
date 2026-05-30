@@ -23,33 +23,25 @@ namespace LearningBank.Infrastructure.Data.Migrations
             modelBuilder.Entity("LearningBank.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(100);
 
-                    b.Property<Guid>("ActorId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("ActorId");
 
-                    b.Property<string>("After")
-                        .HasColumnType("TEXT");
+                    b.Property<string>("After");
 
-                    b.Property<string>("Before")
-                        .HasColumnType("TEXT");
+                    b.Property<string>("Before");
 
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("EntityId");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(100);
 
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("OccurredAt");
 
                     b.HasKey("Id");
 
@@ -63,22 +55,17 @@ namespace LearningBank.Infrastructure.Data.Migrations
             modelBuilder.Entity("LearningBank.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("CreatedAt");
 
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("INTEGER");
+                    b.Property<bool>("IsArchived");
 
-                    b.Property<bool>("IsChildAllowed")
-                        .HasColumnType("INTEGER");
+                    b.Property<bool>("IsChildAllowed");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(100);
 
                     b.HasKey("Id");
 
@@ -91,17 +78,13 @@ namespace LearningBank.Infrastructure.Data.Migrations
             modelBuilder.Entity("LearningBank.Domain.Entities.ChildLink", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<Guid>("ChildId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("ChildId");
 
-                    b.Property<DateTimeOffset>("LinkedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("LinkedAt");
 
-                    b.Property<Guid>("ParentId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("ParentId");
 
                     b.HasKey("Id");
 
@@ -116,37 +99,28 @@ namespace LearningBank.Infrastructure.Data.Migrations
             modelBuilder.Entity("LearningBank.Domain.Entities.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<int>("Account")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("Account");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid?>("CategoryId");
 
-                    b.Property<Guid>("ChildId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("ChildId");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(500);
 
-                    b.Property<Guid?>("EnteredByParentId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid?>("EnteredByParentId");
 
-                    b.Property<DateTimeOffset>("PostedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("PostedAt");
 
-                    b.Property<Guid?>("RelatedTransactionId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid?>("RelatedTransactionId");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("Type");
 
                     b.HasKey("Id");
 
@@ -162,35 +136,27 @@ namespace LearningBank.Infrastructure.Data.Migrations
             modelBuilder.Entity("LearningBank.Domain.Entities.TransferRequest", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd();
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<Guid>("ChildId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("ChildId");
 
                     b.Property<string>("Note")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(500);
 
-                    b.Property<DateTimeOffset>("RequestedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("RequestedAt");
 
                     b.Property<string>("ReviewNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(500);
 
-                    b.Property<DateTimeOffset?>("ReviewedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset?>("ReviewedAt");
 
-                    b.Property<Guid?>("ReviewedByParentId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid?>("ReviewedByParentId");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("Status");
 
                     b.HasKey("Id");
 
@@ -202,37 +168,29 @@ namespace LearningBank.Infrastructure.Data.Migrations
             modelBuilder.Entity("LearningBank.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("CreatedAt");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(256);
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(256);
 
                     b.Property<string>("ExternalId")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(256);
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
+                    b.Property<bool>("IsActive");
 
                     b.Property<string>("Provider")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(50);
 
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
+                    b.Property<int>("Role");
 
                     b.HasKey("Id");
 

@@ -15,20 +15,20 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "LearningTasks",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ChildId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Title = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Id = table.Column<Guid>(nullable: false),
+                    ChildId = table.Column<Guid>(nullable: false),
+                    Title = table.Column<string>(maxLength: 200, nullable: false),
                     MonetaryValue = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
-                    TargetAccount = table.Column<int>(type: "INTEGER", nullable: false),
-                    RecurrenceType = table.Column<int>(type: "INTEGER", nullable: false),
-                    Frequency = table.Column<int>(type: "INTEGER", nullable: true),
-                    DaysOfWeekCsv = table.Column<string>(type: "TEXT", maxLength: 64, nullable: true),
-                    EndDateUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    MaxOccurrences = table.Column<int>(type: "INTEGER", nullable: true),
-                    StartDateUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    CreatedByParentId = table.Column<Guid>(type: "TEXT", nullable: false)
+                    TargetAccount = table.Column<int>(nullable: false),
+                    RecurrenceType = table.Column<int>(nullable: false),
+                    Frequency = table.Column<int>(nullable: true),
+                    DaysOfWeekCsv = table.Column<string>(maxLength: 64, nullable: true),
+                    EndDateUtc = table.Column<DateTime>(nullable: true),
+                    MaxOccurrences = table.Column<int>(nullable: true),
+                    StartDateUtc = table.Column<DateTime>(nullable: false),
+                    IsActive = table.Column<bool>(nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(nullable: false),
+                    CreatedByParentId = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -45,15 +45,15 @@ namespace LearningBank.Infrastructure.Data.Migrations
                 name: "TaskCompletions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    TaskId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ChildId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    OccurrenceDateUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false),
-                    CompletedByChildAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    ReviewedByParentId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    ReviewedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
-                    ReviewNote = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
+                    Id = table.Column<Guid>(nullable: false),
+                    TaskId = table.Column<Guid>(nullable: false),
+                    ChildId = table.Column<Guid>(nullable: false),
+                    OccurrenceDateUtc = table.Column<DateTime>(nullable: false),
+                    Status = table.Column<int>(nullable: false),
+                    CompletedByChildAt = table.Column<DateTimeOffset>(nullable: false),
+                    ReviewedByParentId = table.Column<Guid>(nullable: true),
+                    ReviewedAt = table.Column<DateTimeOffset>(nullable: true),
+                    ReviewNote = table.Column<string>(maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
