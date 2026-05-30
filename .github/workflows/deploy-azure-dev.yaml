@@ -116,6 +116,20 @@ jobs:
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
 
+      - name: Validate API SQL auth mode is Managed Identity
+        run: |
+          set -euo pipefail
+          APP_CONN=$(az webapp config appsettings list \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --query "[?name=='ConnectionStrings__SqlServer'].value | [0]" \
+            --output tsv)
+
+          if ! echo "$APP_CONN" | grep -q "Authentication=Active Directory Managed Identity"; then
+            echo "Dev API SQL auth mode is not Managed Identity." >&2
+            exit 1
+          fi
+
       - name: Publish API (self-contained linux-x64)
         run: |
           dotnet restore LearningBank.sln

@@ -148,6 +148,31 @@ jobs:
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
 
+      - name: Validate API SQL auth mode is Managed Identity
+        run: |
+          set -euo pipefail
+          APP_CONN=$(az webapp config appsettings list \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --query "[?name=='ConnectionStrings__SqlServer'].value | [0]" \
+            --output tsv)
+          SLOT_CONN=$(az webapp config appsettings list \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --query "[?name=='ConnectionStrings__SqlServer'].value | [0]" \
+            --output tsv)
+
+          if ! echo "$APP_CONN" | grep -q "Authentication=Active Directory Managed Identity"; then
+            echo "Production slot SQL auth mode is not Managed Identity." >&2
+            exit 1
+          fi
+
+          if ! echo "$SLOT_CONN" | grep -q "Authentication=Active Directory Managed Identity"; then
+            echo "Staging slot SQL auth mode is not Managed Identity." >&2
+            exit 1
+          fi
+
       - name: Refresh Azure Login (OIDC) before SQL user setup
         uses: azure/login@v2
         with:
@@ -230,13 +255,6 @@ jobs:
           cp -R .next/static .next/standalone/.next/static
           cp -R public .next/standalone/public
 
-      - name: Deploy API to staging slot
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.API_APP_NAME }}
-          slot-name: ${{ env.SLOT_NAME }}
-          package: ./artifacts/api
-
       - name: Refresh Azure Login (OIDC) before EF migrations
         uses: azure/login@v2
         with:
@@ -258,6 +276,13 @@ jobs:
             --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
             --connection "$ConnectionStrings__SqlServer"
+
+      - name: Deploy API to staging slot
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.API_APP_NAME }}
+          slot-name: ${{ env.SLOT_NAME }}
+          package: ./artifacts/api
 
       - name: Resolve API default hostname (staging)
         id: api-host
