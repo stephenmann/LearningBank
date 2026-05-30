@@ -127,7 +127,7 @@ jobs:
             --resource-group "$RESOURCE_GROUP" \
             --name "$API_APP_NAME" \
             --output json \
-            | python3 -c "import json,sys; rid=sys.argv[1]; payload=json.load(sys.stdin); identity=((payload.get('userAssignedIdentities') or {}).get(rid) or {}).get('principalId'); print(identity or '')" "$API_SQL_IDENTITY_RESOURCE_ID"
+            | python3 -c "import json,sys; rid=sys.argv[1].strip('/').lower(); payload=json.load(sys.stdin); uamis=payload.get('userAssignedIdentities') or {}; identity=next((((v or {}).get('principalId') or '') for k,v in uamis.items() if (k or '').strip('/').lower()==rid), ''); print(identity)" "$API_SQL_IDENTITY_RESOURCE_ID"
           )
 
           if [ -z "$APP_UAMI" ] || [ "$APP_UAMI" = "null" ]; then
