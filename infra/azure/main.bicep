@@ -211,7 +211,7 @@ var resolvedSqlAdminObjectId = !empty(sqlAadAdminObjectId) ? sqlAadAdminObjectId
 var resolvedSqlAdminLogin = !empty(sqlAadAdminObjectId) ? sqlAadAdminLogin : sqlAdminIdentityName
 var apiSlotPrincipalId = createStagingSlots ? (apiSlot.?outputs.principalId ?? '') : ''
 var webSlotPrincipalId = createStagingSlots ? (webSlot.?outputs.principalId ?? '') : ''
-var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default' : ''
+var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;ConnectRetryCount=5;ConnectRetryInterval=10;Authentication=Active Directory Managed Identity' : ''
 var apiConnectionStringSetting = apiConnectionString
 var authSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/auth-secret)' : authSecret
 var googleClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/google-client-secret)' : googleClientSecret

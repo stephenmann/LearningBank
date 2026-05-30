@@ -176,17 +176,30 @@ builder.Services.AddEndpointsApiExplorer();
 var app = builder.Build();
 
 // ── Migrate & seed ────────────────────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+const int maxDbStartupAttempts = 6;
+for (var attempt = 1; attempt <= maxDbStartupAttempts; attempt++)
 {
-    var db = scope.ServiceProvider.GetRequiredService<LearningBankDbContext>();
-    await db.Database.MigrateAsync();
-
-    if (!db.Categories.Any())
+    try
     {
-        var defaults = new[] { ("Allowance", true), ("Birthday Gift", true), ("Chore Earnings", true), ("Gift Card", true), ("Other", true) };
-        foreach (var (name, allowed) in defaults)
-            db.Categories.Add(LearningBank.Domain.Entities.Category.Create(name, allowed));
-        await db.SaveChangesAsync();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LearningBankDbContext>();
+        await db.Database.MigrateAsync();
+
+        if (!db.Categories.Any())
+        {
+            var defaults = new[] { ("Allowance", true), ("Birthday Gift", true), ("Chore Earnings", true), ("Gift Card", true), ("Other", true) };
+            foreach (var (name, allowed) in defaults)
+                db.Categories.Add(LearningBank.Domain.Entities.Category.Create(name, allowed));
+            await db.SaveChangesAsync();
+        }
+
+        break;
+    }
+    catch (Exception ex) when (attempt < maxDbStartupAttempts)
+    {
+        var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
+        Log.Warning(ex, "Database startup failed on attempt {Attempt}/{MaxAttempts}. Retrying in {DelaySeconds}s.", attempt, maxDbStartupAttempts, delay.TotalSeconds);
+        await Task.Delay(delay);
     }
 }
 
