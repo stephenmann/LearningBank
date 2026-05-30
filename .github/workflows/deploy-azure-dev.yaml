@@ -142,7 +142,8 @@ jobs:
           # outputs (set in GITHUB_ENV above). Authenticates as the workflow's
           # OIDC identity (a db_ddladmin SQL user provisioned by Bicep) via
           # Active Directory Default — no SQL credentials required.
-          ConnectionStrings__SqlServer="Server=tcp:${SQL_SERVER_FQDN},1433;Initial Catalog=${SQL_DATABASE_NAME};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
+          export Database__Provider=SqlServer
+          export ConnectionStrings__SqlServer="Server=tcp:${SQL_SERVER_FQDN},1433;Initial Catalog=${SQL_DATABASE_NAME};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
           dotnet ef database update \
             --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \
             --startup-project src/LearningBank.Api/LearningBank.Api.csproj \
