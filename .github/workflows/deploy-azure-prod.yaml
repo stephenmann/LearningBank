@@ -172,12 +172,10 @@ jobs:
           emit() {
             uname="$1"; objid="$2"; ddl="$3"
             s=$(sid "$objid")
-            cat >> "$GRANTS" <<EOF
-IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$uname')
-  CREATE USER [$uname] WITH SID = 0x$s, TYPE = E;
-ALTER ROLE db_datareader ADD MEMBER [$uname];
-ALTER ROLE db_datawriter ADD MEMBER [$uname];
-EOF
+            printf "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'%s')\n" "$uname" >> "$GRANTS"
+            printf "  CREATE USER [%s] WITH SID = 0x%s, TYPE = E;\n" "$uname" "$s" >> "$GRANTS"
+            printf "ALTER ROLE db_datareader ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
+            printf "ALTER ROLE db_datawriter ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
             if [ "$ddl" = "ddl" ]; then echo "ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"; fi
             echo "GO" >> "$GRANTS"
           }
