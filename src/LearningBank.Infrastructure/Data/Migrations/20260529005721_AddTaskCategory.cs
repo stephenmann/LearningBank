@@ -14,7 +14,6 @@ namespace LearningBank.Infrastructure.Data.Migrations
             migrationBuilder.AddColumn<Guid>(
                 name: "CategoryId",
                 table: "LearningTasks",
-                type: "TEXT",
                 nullable: true);
 
             migrationBuilder.CreateIndex(
