@@ -508,7 +508,7 @@ export function TasksClient({ childId, role, tasks, pendingCompletions, categori
                         )}
                       </div>
                       {task.lastReviewNote && (
-                        <p className="text-xs text-[#454745] italic mt-2">"{task.lastReviewNote}"</p>
+                        <p className="text-xs text-[#454745] italic mt-2">&quot;{task.lastReviewNote}&quot;</p>
                       )}
                     </div>
 
