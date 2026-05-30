@@ -89,6 +89,7 @@ jobs:
           AZURE_AD_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
           AZURE_AD_TENANT_ID: ${{ vars.AZURE_AD_TENANT_ID }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          WAF_CI_BYPASS_TOKEN: ${{ secrets.WAF_CI_BYPASS_TOKEN }}
           SQL_SERVER_NAME: learningbank-sql-prod
           SQL_DATABASE_NAME: learningbank
           API_MANAGEMENT_PUBLISHER_EMAIL: ${{ vars.API_MANAGEMENT_PUBLISHER_EMAIL != '' && vars.API_MANAGEMENT_PUBLISHER_EMAIL || 'ops@learningbank.local' }}
@@ -142,6 +143,7 @@ jobs:
               frontDoorRootDomainHostName="$FRONT_DOOR_ROOT_DOMAIN_HOSTNAME" \
               frontDoorWwwDomainHostName="$FRONT_DOOR_WWW_DOMAIN_HOSTNAME" \
               frontDoorDnsZoneResourceId="$FRONT_DOOR_DNS_ZONE_RESOURCE_ID" \
+              frontDoorWafCiBypassToken="$WAF_CI_BYPASS_TOKEN" \
               frontDoorCreateCustomDomains="$FRONT_DOOR_CREATE_CUSTOM_DOMAINS" \
               frontDoorRootCustomDomainName="$FRONT_DOOR_ROOT_CUSTOM_DOMAIN_NAME" \
               frontDoorWwwCustomDomainName="$FRONT_DOOR_WWW_CUSTOM_DOMAIN_NAME" \
@@ -488,7 +490,9 @@ jobs:
           echo "hostname=$HOSTNAME" >> "$GITHUB_OUTPUT"
 
       - name: Front Door smoke test
-        run: curl --fail --show-error --silent "https://${{ steps.frontdoor-host.outputs.hostname }}/" > /dev/null
+        env:
+          WAF_CI_BYPASS_TOKEN: ${{ secrets.WAF_CI_BYPASS_TOKEN }}
+        run: curl --fail --show-error --silent -H "X-CI-Bypass: ${WAF_CI_BYPASS_TOKEN}" "https://${{ steps.frontdoor-host.outputs.hostname }}/" > /dev/null
 
       - name: Deployment summary
         run: |

@@ -90,6 +90,10 @@ param frontDoorDnsZoneResourceId string = ''
 @description('Set true to create Front Door custom domains. Set false to reference already-existing custom domains.')
 param frontDoorCreateCustomDomains bool = false
 
+@description('Secret token value used to allow CI smoke-test requests through the geo-blocking WAF rule. Must be alphanumeric, 16-64 chars.')
+@secure()
+param frontDoorWafCiBypassToken string = ''
+
 @description('Existing or desired Front Door custom domain resource name for the root domain.')
 param frontDoorRootCustomDomainName string = 'mylearningbank-com-c8a3'
 
@@ -655,6 +659,25 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
     }
     customRules: {
       rules: [
+        // Allow CI smoke-test requests that carry the secret bypass header before any blocking rules fire.
+        // The header value is stored as a GitHub secret and never logged.
+        {
+          name: 'allowcibypass'
+          enabledState: empty(frontDoorWafCiBypassToken) ? 'Disabled' : 'Enabled'
+          priority: 50
+          ruleType: 'MatchRule'
+          action: 'Allow'
+          matchConditions: [
+            {
+              matchVariable: 'RequestHeader'
+              selector: 'X-CI-Bypass'
+              operator: 'Equal'
+              matchValue: [
+                frontDoorWafCiBypassToken
+              ]
+            }
+          ]
+        }
         {
           name: 'blocknonus'
           enabledState: 'Enabled'
