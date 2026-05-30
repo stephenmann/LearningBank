@@ -160,17 +160,33 @@ jobs:
       - name: Ensure API SQL UAMI is assigned to app and slot
         run: |
           set -euo pipefail
-          az webapp identity assign \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$API_APP_NAME" \
-            --identities "$API_SQL_IDENTITY_RESOURCE_ID" \
-            --output none
-          az webapp identity assign \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$API_APP_NAME" \
-            --slot "$SLOT_NAME" \
-            --identities "$API_SQL_IDENTITY_RESOURCE_ID" \
-            --output none
+          ensure_uami() {
+            target="$1"
+            slot_arg="$2"
+
+            existing=$(az webapp identity show \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "$API_APP_NAME" \
+              $slot_arg \
+              --query "userAssignedIdentities.'$API_SQL_IDENTITY_RESOURCE_ID'.principalId" \
+              --output tsv)
+
+            if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+              echo "$target already has the shared SQL UAMI assigned."
+              return
+            fi
+
+            echo "Assigning shared SQL UAMI to $target..."
+            az webapp identity assign \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "$API_APP_NAME" \
+              $slot_arg \
+              --identities "$API_SQL_IDENTITY_RESOURCE_ID" \
+              --output none
+          }
+
+          ensure_uami "API app" ""
+          ensure_uami "API staging slot" "--slot $SLOT_NAME"
 
       - name: Validate API app and slot have SQL UAMI
         run: |
