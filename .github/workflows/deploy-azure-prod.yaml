@@ -148,11 +148,52 @@ jobs:
           API_SQL_IDENTITY_NAME=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityName.value --output tsv)
           API_SQL_IDENTITY_PRINCIPAL_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityPrincipalId.value --output tsv)
           API_SQL_IDENTITY_CLIENT_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityClientId.value --output tsv)
+          API_SQL_IDENTITY_RESOURCE_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityResourceId.value --output tsv)
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
           echo "API_SQL_IDENTITY_NAME=$API_SQL_IDENTITY_NAME" >> "$GITHUB_ENV"
           echo "API_SQL_IDENTITY_PRINCIPAL_ID=$API_SQL_IDENTITY_PRINCIPAL_ID" >> "$GITHUB_ENV"
           echo "API_SQL_IDENTITY_CLIENT_ID=$API_SQL_IDENTITY_CLIENT_ID" >> "$GITHUB_ENV"
+          echo "API_SQL_IDENTITY_RESOURCE_ID=$API_SQL_IDENTITY_RESOURCE_ID" >> "$GITHUB_ENV"
+
+      - name: Ensure API SQL UAMI is assigned to app and slot
+        run: |
+          set -euo pipefail
+          az webapp identity assign \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --identities "$API_SQL_IDENTITY_RESOURCE_ID" \
+            --output none
+          az webapp identity assign \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --identities "$API_SQL_IDENTITY_RESOURCE_ID" \
+            --output none
+
+      - name: Validate API app and slot have SQL UAMI
+        run: |
+          set -euo pipefail
+          APP_UAMI=$(az webapp identity show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --query "userAssignedIdentities.'$API_SQL_IDENTITY_RESOURCE_ID'.principalId" \
+            --output tsv)
+          SLOT_UAMI=$(az webapp identity show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --slot "$SLOT_NAME" \
+            --query "userAssignedIdentities.'$API_SQL_IDENTITY_RESOURCE_ID'.principalId" \
+            --output tsv)
+
+          if [ -z "$APP_UAMI" ] || [ "$APP_UAMI" = "null" ]; then
+            echo "API app is missing shared SQL UAMI assignment." >&2
+            exit 1
+          fi
+          if [ -z "$SLOT_UAMI" ] || [ "$SLOT_UAMI" = "null" ]; then
+            echo "API staging slot is missing shared SQL UAMI assignment." >&2
+            exit 1
+          fi
 
       - name: Validate SQL server identity is configured
         run: |
@@ -237,13 +278,19 @@ jobs:
             s=$(sid "$objid")
             printf "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'%s')\n" "$uname" >> "$GRANTS"
             printf "  CREATE USER [%s] WITH SID = 0x%s, TYPE = E;\n" "$uname" "$s" >> "$GRANTS"
-            printf "ALTER ROLE db_datareader ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
-            printf "ALTER ROLE db_datawriter ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
-            if [ "$ddl" = "ddl" ]; then echo "ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"; fi
+            printf "IF IS_ROLEMEMBER('db_datareader', '%s') <> 1\n" "$uname" >> "$GRANTS"
+            printf "  ALTER ROLE db_datareader ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
+            printf "IF IS_ROLEMEMBER('db_datawriter', '%s') <> 1\n" "$uname" >> "$GRANTS"
+            printf "  ALTER ROLE db_datawriter ADD MEMBER [%s];\n" "$uname" >> "$GRANTS"
+            if [ "$ddl" = "ddl" ]; then
+              printf "IF IS_ROLEMEMBER('db_ddladmin', '%s') <> 1\n" "$uname" >> "$GRANTS"
+              echo "  ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"
+            fi
             echo "GO" >> "$GRANTS"
           }
 
           emit "$API_SQL_IDENTITY_NAME" "$API_SQL_IDENTITY_PRINCIPAL_ID" ""
+          emit "${API_SQL_IDENTITY_NAME}-client" "$API_SQL_IDENTITY_CLIENT_ID" ""
           emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
 
           echo "----- grants.sql -----"
@@ -274,10 +321,22 @@ jobs:
           printf "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'%s' AND sid = 0x%s) BEGIN SET @missing = @missing + 1; PRINT 'Missing/mismatched: %s'; END\n" \
             "$API_SQL_IDENTITY_NAME" "$API_SQL_SID" "$API_SQL_IDENTITY_NAME" >> "$VERIFY"
           printf "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'%s' AND sid = 0x%s) BEGIN SET @missing = @missing + 1; PRINT 'Missing/mismatched: %s'; END\n" \
+            "${API_SQL_IDENTITY_NAME}-client" "$(sid "$API_SQL_IDENTITY_CLIENT_ID")" "${API_SQL_IDENTITY_NAME}-client" >> "$VERIFY"
+          printf "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'%s' AND sid = 0x%s) BEGIN SET @missing = @missing + 1; PRINT 'Missing/mismatched: %s'; END\n" \
             "github-deploy" "$DEPLOY_SID" "github-deploy" >> "$VERIFY"
+          printf "IF IS_ROLEMEMBER('db_datareader', '%s') <> 1 BEGIN SET @missing = @missing + 1; PRINT 'Missing role db_datareader: %s'; END\n" \
+            "$API_SQL_IDENTITY_NAME" "$API_SQL_IDENTITY_NAME" >> "$VERIFY"
+          printf "IF IS_ROLEMEMBER('db_datawriter', '%s') <> 1 BEGIN SET @missing = @missing + 1; PRINT 'Missing role db_datawriter: %s'; END\n" \
+            "$API_SQL_IDENTITY_NAME" "$API_SQL_IDENTITY_NAME" >> "$VERIFY"
+          printf "IF IS_ROLEMEMBER('db_datareader', '%s') <> 1 BEGIN SET @missing = @missing + 1; PRINT 'Missing role db_datareader: %s'; END\n" \
+            "${API_SQL_IDENTITY_NAME}-client" "${API_SQL_IDENTITY_NAME}-client" >> "$VERIFY"
+          printf "IF IS_ROLEMEMBER('db_datawriter', '%s') <> 1 BEGIN SET @missing = @missing + 1; PRINT 'Missing role db_datawriter: %s'; END\n" \
+            "${API_SQL_IDENTITY_NAME}-client" "${API_SQL_IDENTITY_NAME}-client" >> "$VERIFY"
+          printf "IF IS_ROLEMEMBER('db_ddladmin', '%s') <> 1 BEGIN SET @missing = @missing + 1; PRINT 'Missing role db_ddladmin: %s'; END\n" \
+            "github-deploy" "github-deploy" >> "$VERIFY"
           printf "IF @missing > 0 BEGIN THROW 50000, 'SQL contained user verification failed.', 1; END\n" >> "$VERIFY"
-          printf "SELECT p.name, p.type_desc FROM sys.database_principals p WHERE p.name IN (N'%s', N'github-deploy') ORDER BY p.name;\n" \
-            "$API_SQL_IDENTITY_NAME" >> "$VERIFY"
+          printf "SELECT p.name, p.type_desc FROM sys.database_principals p WHERE p.name IN (N'%s', N'%s', N'github-deploy') ORDER BY p.name;\n" \
+            "$API_SQL_IDENTITY_NAME" "${API_SQL_IDENTITY_NAME}-client" >> "$VERIFY"
 
           echo "----- verify-principals.sql -----"
           cat "$VERIFY"

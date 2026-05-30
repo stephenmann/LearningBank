@@ -608,6 +608,7 @@ var apiAppSettings = union({
   AllowedHosts: '${apiAppName}.azurewebsites.net'
   Database__Provider: 'SqlServer'
   ConnectionStrings__SqlServer: apiConnectionStringSetting
+  AZURE_CLIENT_ID: apiSqlClientId
   Auth__Authority: apiAuthAuthority
   Auth__Audience: apiAuthAudience
   Auth__WebAppUrl: nextAuthUrl
@@ -751,6 +752,7 @@ resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (e
       { name: 'UAMI_CLIENT_ID', value: sqlAdminClientId }
       { name: 'API_SQL_IDENTITY_NAME', value: apiSqlIdentityName }
       { name: 'API_SQL_OBJECT_ID', value: apiSqlPrincipalId }
+      { name: 'API_SQL_CLIENT_ID', value: apiSqlClientId }
       { name: 'DEPLOY_OBJECT_ID', value: deployPrincipalObjectId }
     ]
     scriptContent: '''
@@ -773,14 +775,22 @@ emit() {
   cat >> "$GRANTS" <<EOF
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$uname')
   CREATE USER [$uname] WITH SID = 0x$s, TYPE = E;
-ALTER ROLE db_datareader ADD MEMBER [$uname];
-ALTER ROLE db_datawriter ADD MEMBER [$uname];
+IF IS_ROLEMEMBER('db_datareader', '$uname') <> 1
+  ALTER ROLE db_datareader ADD MEMBER [$uname];
+IF IS_ROLEMEMBER('db_datawriter', '$uname') <> 1
+  ALTER ROLE db_datawriter ADD MEMBER [$uname];
 EOF
-  if [ "$ddl" = "ddl" ]; then echo "ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"; fi
+  if [ "$ddl" = "ddl" ]; then
+    cat >> "$GRANTS" <<EOF
+IF IS_ROLEMEMBER('db_ddladmin', '$uname') <> 1
+  ALTER ROLE db_ddladmin ADD MEMBER [$uname];
+EOF
+  fi
   echo "GO" >> "$GRANTS"
 }
 
 emit "$API_SQL_IDENTITY_NAME" "$API_SQL_OBJECT_ID" ""
+[ -n "${API_SQL_CLIENT_ID:-}" ] && emit "${API_SQL_IDENTITY_NAME}-client" "$API_SQL_CLIENT_ID" ""
 [ -n "${DEPLOY_OBJECT_ID:-}" ] && emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
 
 echo "----- grants.sql -----"; cat "$GRANTS"
@@ -852,3 +862,4 @@ output apiConnectionString string = apiConnectionString
 output apiSqlIdentityName string = apiSqlIdentityName
 output apiSqlIdentityPrincipalId string = apiSqlPrincipalId
 output apiSqlIdentityClientId string = apiSqlClientId
+output apiSqlIdentityResourceId string = apiSqlIdentity.id

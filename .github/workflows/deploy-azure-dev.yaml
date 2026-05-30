@@ -113,8 +113,26 @@ jobs:
           # Surface the SQL connection details (provisioned above) to later steps.
           SQL_FQDN=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.sqlServerFqdn.value --output tsv)
           SQL_DB=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.sqlDatabaseName.value --output tsv)
+          API_SQL_IDENTITY_CLIENT_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityClientId.value --output tsv)
+          API_SQL_IDENTITY_RESOURCE_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityResourceId.value --output tsv)
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
+          echo "API_SQL_IDENTITY_CLIENT_ID=$API_SQL_IDENTITY_CLIENT_ID" >> "$GITHUB_ENV"
+          echo "API_SQL_IDENTITY_RESOURCE_ID=$API_SQL_IDENTITY_RESOURCE_ID" >> "$GITHUB_ENV"
+
+      - name: Validate API app has SQL UAMI
+        run: |
+          set -euo pipefail
+          APP_UAMI=$(az webapp identity show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --query "userAssignedIdentities.'$API_SQL_IDENTITY_RESOURCE_ID'.principalId" \
+            --output tsv)
+
+          if [ -z "$APP_UAMI" ] || [ "$APP_UAMI" = "null" ]; then
+            echo "Dev API app is missing shared SQL UAMI assignment." >&2
+            exit 1
+          fi
 
       - name: Validate API SQL auth mode is Managed Identity
         run: |
@@ -124,9 +142,24 @@ jobs:
             --name "$API_APP_NAME" \
             --query "[?name=='ConnectionStrings__SqlServer'].value | [0]" \
             --output tsv)
+          APP_AZURE_CLIENT_ID=$(az webapp config appsettings list \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$API_APP_NAME" \
+            --query "[?name=='AZURE_CLIENT_ID'].value | [0]" \
+            --output tsv)
 
           if ! echo "$APP_CONN" | grep -q "Authentication=Active Directory Managed Identity"; then
             echo "Dev API SQL auth mode is not Managed Identity." >&2
+            exit 1
+          fi
+
+          if ! echo "$APP_CONN" | grep -q "User Id=${API_SQL_IDENTITY_CLIENT_ID}"; then
+            echo "Dev API SQL connection string is not pinned to the shared API SQL identity." >&2
+            exit 1
+          fi
+
+          if [ "$APP_AZURE_CLIENT_ID" != "$API_SQL_IDENTITY_CLIENT_ID" ]; then
+            echo "Dev API AZURE_CLIENT_ID does not match the shared API SQL identity client ID." >&2
             exit 1
           fi
 
@@ -173,7 +206,7 @@ jobs:
       - name: Deploy API
         uses: azure/webapps-deploy@v3
         with:
-          app-name: learningbank-api
+          app-name: ${{ env.API_APP_NAME }}
           package: ./artifacts/api
 
       - name: Resolve API default hostname
@@ -194,7 +227,7 @@ jobs:
       - name: Deploy Web
         uses: azure/webapps-deploy@v3
         with:
-          app-name: learningbank-web
+          app-name: ${{ env.WEB_APP_NAME }}
           package: ./src/learning-bank-web/.next/standalone
 
       - name: Resolve Web default hostname
