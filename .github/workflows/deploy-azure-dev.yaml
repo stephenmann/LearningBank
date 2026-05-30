@@ -126,8 +126,17 @@ jobs:
           APP_UAMI=$(az webapp identity show \
             --resource-group "$RESOURCE_GROUP" \
             --name "$API_APP_NAME" \
-            --query "userAssignedIdentities.'$API_SQL_IDENTITY_RESOURCE_ID'.principalId" \
-            --output tsv)
+            --output json \
+            | python3 - "$API_SQL_IDENTITY_RESOURCE_ID" <<'PY'
+import json
+import sys
+
+resource_id = sys.argv[1]
+payload = json.load(sys.stdin)
+identity = ((payload.get("userAssignedIdentities") or {}).get(resource_id) or {}).get("principalId")
+print(identity or "")
+PY
+          )
 
           if [ -z "$APP_UAMI" ] || [ "$APP_UAMI" = "null" ]; then
             echo "Dev API app is missing shared SQL UAMI assignment." >&2
