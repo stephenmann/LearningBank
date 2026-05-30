@@ -751,14 +751,17 @@ curl -sSL "https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcm
 mkdir -p /tmp/sqlcmd && tar -xjf /tmp/sqlcmd.tar.bz2 -C /tmp/sqlcmd
 SQLCMD=/tmp/sqlcmd/sqlcmd
 
+sid() { python3 -c "import uuid,sys; print(uuid.UUID(sys.argv[1]).bytes_le.hex())" "$1"; }
+
 GRANTS=/tmp/grants.sql
 : > "$GRANTS"
 
 emit() {
   uname="$1"; objid="$2"; ddl="$3"
+  s=$(sid "$objid")
   cat >> "$GRANTS" <<EOF
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$uname')
-  CREATE USER [$uname] WITH SID = CONVERT(varbinary(16), CAST('$objid' AS uniqueidentifier)), TYPE = E;
+  CREATE USER [$uname] WITH SID = 0x$s, TYPE = E;
 ALTER ROLE db_datareader ADD MEMBER [$uname];
 ALTER ROLE db_datawriter ADD MEMBER [$uname];
 EOF
@@ -766,8 +769,8 @@ EOF
   echo "GO" >> "$GRANTS"
 }
 
-emit "$API_APP_NAME" "$API_APP_OBJECT_ID" "ddl"
-[ -n "${API_SLOT_OBJECT_ID:-}" ] && emit "${API_APP_NAME}-staging" "$API_SLOT_OBJECT_ID" "ddl"
+emit "$API_APP_NAME" "$API_APP_OBJECT_ID" ""
+[ -n "${API_SLOT_OBJECT_ID:-}" ] && emit "${API_APP_NAME}-staging" "$API_SLOT_OBJECT_ID" ""
 [ -n "${DEPLOY_OBJECT_ID:-}" ] && emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
 
 echo "----- grants.sql -----"; cat "$GRANTS"

@@ -176,6 +176,10 @@ builder.Services.AddEndpointsApiExplorer();
 var app = builder.Build();
 
 // ── Migrate & seed ────────────────────────────────────────────────────────────
+// In Development, MigrateAsync() creates/updates the SQLite schema automatically.
+// In Production, migrations are applied by the deployment workflow (dotnet ef database update)
+// before the app starts; the runtime managed identity only holds db_datareader + db_datawriter
+// and cannot execute DDL. Calling MigrateAsync() in Production would therefore always fail.
 const int maxDbStartupAttempts = 6;
 for (var attempt = 1; attempt <= maxDbStartupAttempts; attempt++)
 {
@@ -183,7 +187,9 @@ for (var attempt = 1; attempt <= maxDbStartupAttempts; attempt++)
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LearningBankDbContext>();
-        await db.Database.MigrateAsync();
+
+        if (app.Environment.IsDevelopment())
+            await db.Database.MigrateAsync();
 
         if (!db.Categories.Any())
         {
