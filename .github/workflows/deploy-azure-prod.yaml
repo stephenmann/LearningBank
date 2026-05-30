@@ -149,6 +149,7 @@ jobs:
           API_SQL_IDENTITY_PRINCIPAL_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityPrincipalId.value --output tsv)
           API_SQL_IDENTITY_CLIENT_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityClientId.value --output tsv)
           API_SQL_IDENTITY_RESOURCE_ID=$(az deployment group show -g "$RESOURCE_GROUP" -n "$DEPLOY_NAME" --query properties.outputs.apiSqlIdentityResourceId.value --output tsv)
+          echo "SQL_SERVER_NAME=$SQL_SERVER_NAME" >> "$GITHUB_ENV"
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
           echo "API_SQL_IDENTITY_NAME=$API_SQL_IDENTITY_NAME" >> "$GITHUB_ENV"
