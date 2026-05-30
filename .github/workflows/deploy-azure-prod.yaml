@@ -82,13 +82,13 @@ jobs:
           API_MANAGEMENT_PUBLISHER_NAME: ${{ vars.API_MANAGEMENT_PUBLISHER_NAME != '' && vars.API_MANAGEMENT_PUBLISHER_NAME || 'Learning Bank' }}
         run: |
           # The Azure SQL server + database are provisioned by this deployment;
-          # the API uses managed identity (no credentials). The GitHub deploy
-          # identity needs a db_ddladmin user for EF migrations, so pass its
-          # object id to Bicep, which provisions the contained users. The object
-          # id is read from the OIDC token's `oid` claim to avoid any Microsoft
-          # Graph / directory-read permission requirement.
+          # the API uses managed identity (no credentials). Read the GitHub
+          # OIDC principal object id from the token's `oid` claim so this run
+          # can set SQL Entra admin and configure contained users in a later
+          # workflow step without any Graph / directory-read permission.
           DEPLOY_OBJECT_ID=$(az account get-access-token --query accessToken --output tsv \
             | python3 -c "import sys,json,base64; p=sys.stdin.read().strip().split('.')[1]; p+='='*(-len(p)%4); print(json.loads(base64.urlsafe_b64decode(p))['oid'])")
+          echo "DEPLOY_OBJECT_ID=$DEPLOY_OBJECT_ID" >> "$GITHUB_ENV"
           DEPLOY_NAME="lb-prod-$(date +%s)"
           az deployment group create \
             --name "$DEPLOY_NAME" \
@@ -103,6 +103,9 @@ jobs:
               sqlServerName="$SQL_SERVER_NAME" \
               sqlDatabaseName="$SQL_DATABASE_NAME" \
               deployPrincipalObjectId="$DEPLOY_OBJECT_ID" \
+              sqlAadAdminObjectId="$DEPLOY_OBJECT_ID" \
+              sqlAadAdminLogin='github-deploy' \
+              enableSqlUserSetupScript=false \
               appServicePlanSkuName='P1v3' \
               appServicePlanSkuTier='PremiumV3' \
               appServicePlanCapacity=2 \
@@ -138,6 +141,65 @@ jobs:
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
 
+      - name: Configure SQL contained users (OIDC, no deploymentScripts)
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcmd-linux-amd64.tar.bz2" -o /tmp/sqlcmd.tar.bz2
+          mkdir -p /tmp/sqlcmd && tar -xjf /tmp/sqlcmd.tar.bz2 -C /tmp/sqlcmd
+          SQLCMD=/tmp/sqlcmd/sqlcmd
+
+          # Managed identities may take a short time before they are queryable.
+          for i in 1 2 3 4 5 6; do
+            API_APP_OBJECT_ID=$(az webapp identity show --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME" --query principalId --output tsv || true)
+            API_SLOT_OBJECT_ID=$(az webapp identity show --resource-group "$RESOURCE_GROUP" --name "$API_APP_NAME" --slot "$SLOT_NAME" --query principalId --output tsv || true)
+            if [ -n "${API_APP_OBJECT_ID:-}" ] && [ -n "${API_SLOT_OBJECT_ID:-}" ]; then
+              break
+            fi
+            echo "Waiting for app/slot managed identity propagation..."
+            sleep 20
+          done
+
+          if [ -z "${API_APP_OBJECT_ID:-}" ] || [ -z "${API_SLOT_OBJECT_ID:-}" ]; then
+            echo "Failed to resolve API app/slot principal IDs." >&2
+            exit 1
+          fi
+
+          sid() { python3 -c "import uuid,sys; print(uuid.UUID(sys.argv[1]).bytes_le.hex())" "$1"; }
+
+          GRANTS=/tmp/grants.sql
+          : > "$GRANTS"
+
+          emit() {
+            uname="$1"; objid="$2"; ddl="$3"
+            s=$(sid "$objid")
+            cat >> "$GRANTS" <<EOF
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$uname')
+  CREATE USER [$uname] WITH SID = 0x$s, TYPE = E;
+ALTER ROLE db_datareader ADD MEMBER [$uname];
+ALTER ROLE db_datawriter ADD MEMBER [$uname];
+EOF
+            if [ "$ddl" = "ddl" ]; then echo "ALTER ROLE db_ddladmin ADD MEMBER [$uname];" >> "$GRANTS"; fi
+            echo "GO" >> "$GRANTS"
+          }
+
+          emit "$API_APP_NAME" "$API_APP_OBJECT_ID" ""
+          emit "${API_APP_NAME}-${SLOT_NAME}" "$API_SLOT_OBJECT_ID" ""
+          emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
+
+          echo "----- grants.sql -----"
+          cat "$GRANTS"
+
+          for i in 1 2 3 4 5 6; do
+            if "$SQLCMD" -S "$SQL_SERVER_FQDN" -d "$SQL_DATABASE_NAME" --authentication-method ActiveDirectoryDefault -i "$GRANTS" -b; then
+              echo "SQL users configured."
+              exit 0
+            fi
+            echo "Attempt $i failed; waiting for SQL Entra propagation..."
+            sleep 20
+          done
+          echo "Failed to configure SQL users after retries." >&2
+          exit 1
+
       - name: Publish API (self-contained linux-x64)
         run: |
           dotnet restore LearningBank.sln
@@ -169,8 +231,8 @@ jobs:
           export PATH="$PATH:$HOME/.dotnet/tools"
           # SQL_SERVER_FQDN / SQL_DATABASE_NAME come from the Bicep deployment
           # outputs (set in GITHUB_ENV above). Authenticates as the workflow's
-          # OIDC identity (a db_ddladmin SQL user provisioned by Bicep) via
-          # Active Directory Default — no SQL credentials required.
+          # OIDC identity via Active Directory Default — no SQL credentials
+          # required.
           ConnectionStrings__SqlServer="Server=tcp:${SQL_SERVER_FQDN},1433;Initial Catalog=${SQL_DATABASE_NAME};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
           dotnet ef database update \
             --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \

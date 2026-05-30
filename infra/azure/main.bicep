@@ -132,8 +132,17 @@ param sqlAutoPauseDelay int = 60
 @description('Object ID (SID) of the GitHub deployment service principal, granted DB DDL rights for EF migrations. Leave empty to skip.')
 param deployPrincipalObjectId string = ''
 
+@description('Optional SQL Entra admin object ID override. When set, this principal becomes SQL server Entra admin.')
+param sqlAadAdminObjectId string = ''
+
+@description('Login display name for the SQL Entra admin override principal.')
+param sqlAadAdminLogin string = 'github-deploy'
+
 @description('Forces the SQL user-provisioning deployment script to run on every deployment.')
 param sqlSetupRunId string = utcNow()
+
+@description('Set false to skip the deploymentScripts-based SQL user provisioning path.')
+param enableSqlUserSetupScript bool = true
 
 @description('Provision an Azure Key Vault and source app secrets from it.')
 param enableKeyVault bool = true
@@ -198,6 +207,8 @@ var resolvedSqlDatabaseName = enableSql ? sqlServer!.outputs.databaseName : sqlD
 // safe-access operator and coalesce to '' to avoid deployment-time failures.
 var sqlAdminPrincipalId = sqlAdminIdentity.?properties.principalId ?? ''
 var sqlAdminClientId = sqlAdminIdentity.?properties.clientId ?? ''
+var resolvedSqlAdminObjectId = !empty(sqlAadAdminObjectId) ? sqlAadAdminObjectId : sqlAdminPrincipalId
+var resolvedSqlAdminLogin = !empty(sqlAadAdminObjectId) ? sqlAadAdminLogin : sqlAdminIdentityName
 var apiSlotPrincipalId = createStagingSlots ? (apiSlot.?outputs.principalId ?? '') : ''
 var webSlotPrincipalId = createStagingSlots ? (webSlot.?outputs.principalId ?? '') : ''
 var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default' : ''
@@ -223,8 +234,8 @@ module sqlServer './modules/sql.bicep' = if (enableSql) {
     name: sqlServerName
     location: 'centralus'
     databaseName: sqlDatabaseName
-    aadAdminLogin: sqlAdminIdentityName
-    aadAdminObjectId: sqlAdminPrincipalId
+    aadAdminLogin: resolvedSqlAdminLogin
+    aadAdminObjectId: resolvedSqlAdminObjectId
     aadAdminPrincipalType: 'Application'
     minCapacity: sqlMinCapacity
     maxVCores: sqlMaxVCores
@@ -705,7 +716,7 @@ module webSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
 // Directory Readers dependency. The runtime API identity gets read/write; the
 // deployment identity additionally gets db_ddladmin for EF migrations. ---
 
-resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (enableSql) {
+resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (enableSql && enableSqlUserSetupScript) {
   name: 'configure-sql-users'
   location: location
   kind: 'AzureCLI'
