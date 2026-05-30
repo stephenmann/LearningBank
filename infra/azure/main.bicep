@@ -692,6 +692,7 @@ module webApp './modules/web-app.bicep' = {
     location: location
     serverFarmId: appServicePlan.outputs.id
     linuxFxVersion: 'NODE|22-lts'
+    appCommandLine: 'node server.js'
     appSettings: webAppSettings
     enableSystemAssignedIdentity: true
     ipSecurityRestrictions: webAppIpRestrictions
@@ -724,6 +725,7 @@ module webSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
     location: location
     slotName: slotName
     linuxFxVersion: 'NODE|22-lts'
+    appCommandLine: 'node server.js'
     appSettings: webAppSettings
   }
 }
