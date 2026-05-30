@@ -238,6 +238,7 @@ jobs:
           # outputs (set in GITHUB_ENV above). Authenticates as the workflow's
           # OIDC identity via Active Directory Default — no SQL credentials
           # required.
+          Database__Provider=SqlServer
           ConnectionStrings__SqlServer="Server=tcp:${SQL_SERVER_FQDN},1433;Initial Catalog=${SQL_DATABASE_NAME};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
           dotnet ef database update \
             --project src/LearningBank.Infrastructure/LearningBank.Infrastructure.csproj \
