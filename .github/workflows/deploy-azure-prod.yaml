@@ -492,7 +492,10 @@ jobs:
       - name: Front Door smoke test
         env:
           WAF_CI_BYPASS_TOKEN: ${{ secrets.WAF_CI_BYPASS_TOKEN }}
-        run: curl --fail --show-error --silent -H "X-CI-Bypass: ${WAF_CI_BYPASS_TOKEN}" "https://${{ steps.frontdoor-host.outputs.hostname }}/" > /dev/null
+        run: |
+          curl --fail --show-error --silent \
+            -H "X-CI-Bypass: ${WAF_CI_BYPASS_TOKEN}" \
+            "https://${{ steps.frontdoor-host.outputs.hostname }}/" > /dev/null
 
       - name: Deployment summary
         run: |
