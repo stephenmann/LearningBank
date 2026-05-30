@@ -167,15 +167,7 @@ jobs:
               --name "$API_APP_NAME" \
               $slot_arg \
               --output json \
-              | python3 - "$API_SQL_IDENTITY_RESOURCE_ID" <<'PY'
-import json
-import sys
-
-resource_id = sys.argv[1]
-payload = json.load(sys.stdin)
-identity = ((payload.get("userAssignedIdentities") or {}).get(resource_id) or {}).get("principalId")
-print(identity or "")
-PY
+              | python3 -c "import json,sys; rid=sys.argv[1]; payload=json.load(sys.stdin); identity=((payload.get('userAssignedIdentities') or {}).get(rid) or {}).get('principalId'); print(identity or '')" "$API_SQL_IDENTITY_RESOURCE_ID"
           }
 
           ensure_uami() {
@@ -211,15 +203,7 @@ PY
               --name "$API_APP_NAME" \
               $slot_arg \
               --output json \
-              | python3 - "$API_SQL_IDENTITY_RESOURCE_ID" <<'PY'
-import json
-import sys
-
-resource_id = sys.argv[1]
-payload = json.load(sys.stdin)
-identity = ((payload.get("userAssignedIdentities") or {}).get(resource_id) or {}).get("principalId")
-print(identity or "")
-PY
+              | python3 -c "import json,sys; rid=sys.argv[1]; payload=json.load(sys.stdin); identity=((payload.get('userAssignedIdentities') or {}).get(rid) or {}).get('principalId'); print(identity or '')" "$API_SQL_IDENTITY_RESOURCE_ID"
           }
 
           APP_UAMI=$(get_uami_principal "")
