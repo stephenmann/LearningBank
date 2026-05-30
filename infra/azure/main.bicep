@@ -120,6 +120,9 @@ param sqlDatabaseName string = 'learningbank'
 @description('Name of the user-assigned managed identity used as the SQL Entra (AAD) admin.')
 param sqlAdminIdentityName string = 'learningbank-sql-admin'
 
+@description('Name of the shared user-assigned managed identity used by the API app and slot for SQL access.')
+param apiSqlIdentityName string = 'learningbank-api-sql'
+
 @description('Serverless database minimum vCores (auto-pause floor).')
 param sqlMinCapacity string = '0.5'
 
@@ -207,11 +210,13 @@ var resolvedSqlDatabaseName = enableSql ? sqlServer!.outputs.databaseName : sqlD
 // safe-access operator and coalesce to '' to avoid deployment-time failures.
 var sqlAdminPrincipalId = sqlAdminIdentity.?properties.principalId ?? ''
 var sqlAdminClientId = sqlAdminIdentity.?properties.clientId ?? ''
+var apiSqlPrincipalId = apiSqlIdentity.?properties.principalId ?? ''
+var apiSqlClientId = apiSqlIdentity.?properties.clientId ?? ''
 var resolvedSqlAdminObjectId = !empty(sqlAadAdminObjectId) ? sqlAadAdminObjectId : sqlAdminPrincipalId
 var resolvedSqlAdminLogin = !empty(sqlAadAdminObjectId) ? sqlAadAdminLogin : sqlAdminIdentityName
 var apiSlotPrincipalId = createStagingSlots ? (apiSlot.?outputs.principalId ?? '') : ''
 var webSlotPrincipalId = createStagingSlots ? (webSlot.?outputs.principalId ?? '') : ''
-var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;ConnectRetryCount=5;ConnectRetryInterval=10;Authentication=Active Directory Managed Identity' : ''
+var apiConnectionString = enableSql ? 'Server=tcp:${sqlServerFqdn},1433;Initial Catalog=${resolvedSqlDatabaseName};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;ConnectRetryCount=5;ConnectRetryInterval=10;Authentication=Active Directory Managed Identity;User Id=${apiSqlClientId}' : ''
 var apiConnectionStringSetting = apiConnectionString
 var authSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/auth-secret)' : authSecret
 var googleClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/google-client-secret)' : googleClientSecret
@@ -225,6 +230,11 @@ var azureAdClientSecretSetting = enableKeyVault ? '@Microsoft.KeyVault(SecretUri
 
 resource sqlAdminIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (enableSql) {
   name: sqlAdminIdentityName
+  location: location
+}
+
+resource apiSqlIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (enableSql) {
+  name: apiSqlIdentityName
   location: location
 }
 
@@ -663,6 +673,7 @@ module apiApp './modules/web-app.bicep' = {
     linuxFxVersion: 'DOTNETCORE|10.0'
     appSettings: apiAppSettings
     enableSystemAssignedIdentity: true
+    userAssignedIdentityResourceId: enableSql ? apiSqlIdentity.id : ''
     ipSecurityRestrictions: apiAppIpRestrictions
     ipSecurityRestrictionsDefaultAction: empty(apiAppIpRestrictions) ? 'Allow' : 'Deny'
   }
@@ -693,6 +704,7 @@ module apiSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
     slotName: slotName
     linuxFxVersion: 'DOTNETCORE|10.0'
     appSettings: apiAppSettings
+    userAssignedIdentityResourceId: enableSql ? apiSqlIdentity.id : ''
   }
 }
 
@@ -713,9 +725,8 @@ module webSlot './modules/web-app-slot.bicep' = if (createStagingSlots) {
 // --- SQL contained-user provisioning (passwordless): runs as the UAMI SQL
 // admin and creates database users for the app/slot/deploy identities using
 // CREATE USER ... WITH SID (object id), which avoids any Microsoft Graph /
-// Directory Readers dependency. The runtime API app/slot and deployment
-// identities all receive db_ddladmin because the API applies EF migrations
-// during startup. ---
+// Directory Readers dependency. The shared API SQL identity gets read/write,
+// and the deployment identity gets db_ddladmin for EF migrations. ---
 
 resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (enableSql && enableSqlUserSetupScript) {
   name: 'configure-sql-users'
@@ -737,9 +748,8 @@ resource sqlUserSetup 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (e
       { name: 'SQL_SERVER', value: sqlServerFqdn }
       { name: 'SQL_DB', value: resolvedSqlDatabaseName }
       { name: 'UAMI_CLIENT_ID', value: sqlAdminClientId }
-      { name: 'API_APP_NAME', value: apiAppName }
-      { name: 'API_APP_OBJECT_ID', value: apiApp.outputs.principalId }
-      { name: 'API_SLOT_OBJECT_ID', value: apiSlotPrincipalId }
+      { name: 'API_SQL_IDENTITY_NAME', value: apiSqlIdentityName }
+      { name: 'API_SQL_OBJECT_ID', value: apiSqlPrincipalId }
       { name: 'DEPLOY_OBJECT_ID', value: deployPrincipalObjectId }
     ]
     scriptContent: '''
@@ -769,8 +779,7 @@ EOF
   echo "GO" >> "$GRANTS"
 }
 
-emit "$API_APP_NAME" "$API_APP_OBJECT_ID" ""
-[ -n "${API_SLOT_OBJECT_ID:-}" ] && emit "${API_APP_NAME}-staging" "$API_SLOT_OBJECT_ID" ""
+emit "$API_SQL_IDENTITY_NAME" "$API_SQL_OBJECT_ID" ""
 [ -n "${DEPLOY_OBJECT_ID:-}" ] && emit "github-deploy" "$DEPLOY_OBJECT_ID" "ddl"
 
 echo "----- grants.sql -----"; cat "$GRANTS"
@@ -839,3 +848,6 @@ output apiManagementGatewayUrl string = apiGatewayUrl
 output sqlServerFqdn string = sqlServerFqdn
 output sqlDatabaseName string = resolvedSqlDatabaseName
 output apiConnectionString string = apiConnectionString
+output apiSqlIdentityName string = apiSqlIdentityName
+output apiSqlIdentityPrincipalId string = apiSqlPrincipalId
+output apiSqlIdentityClientId string = apiSqlClientId

@@ -19,11 +19,19 @@ param appSettings object = {}
 @description('Set true to enable system-assigned managed identity on the slot.')
 param enableSystemAssignedIdentity bool = true
 
+@description('Optional user-assigned managed identity resource ID to attach to the slot.')
+param userAssignedIdentityResourceId string = ''
+
 resource slot 'Microsoft.Web/sites/slots@2023-12-01' = {
   name: '${appName}/${slotName}'
   location: location
-  identity: enableSystemAssignedIdentity ? {
-    type: 'SystemAssigned'
+  identity: (enableSystemAssignedIdentity || !empty(userAssignedIdentityResourceId)) ? {
+    type: enableSystemAssignedIdentity
+      ? (!empty(userAssignedIdentityResourceId) ? 'SystemAssigned, UserAssigned' : 'SystemAssigned')
+      : 'UserAssigned'
+    userAssignedIdentities: !empty(userAssignedIdentityResourceId) ? {
+      '${userAssignedIdentityResourceId}': {}
+    } : null
   } : null
   properties: {
     siteConfig: {

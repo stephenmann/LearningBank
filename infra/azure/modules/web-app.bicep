@@ -19,6 +19,9 @@ param appSettings object = {}
 @description('Set true to enable system-assigned managed identity on the app.')
 param enableSystemAssignedIdentity bool = true
 
+@description('Optional user-assigned managed identity resource ID to attach to the app.')
+param userAssignedIdentityResourceId string = ''
+
 @description('Optional access restriction rules for the app endpoint.')
 param ipSecurityRestrictions array = []
 
@@ -29,8 +32,13 @@ resource app 'Microsoft.Web/sites@2023-12-01' = {
   name: name
   location: location
   kind: 'app,linux'
-  identity: enableSystemAssignedIdentity ? {
-    type: 'SystemAssigned'
+  identity: (enableSystemAssignedIdentity || !empty(userAssignedIdentityResourceId)) ? {
+    type: enableSystemAssignedIdentity
+      ? (!empty(userAssignedIdentityResourceId) ? 'SystemAssigned, UserAssigned' : 'SystemAssigned')
+      : 'UserAssigned'
+    userAssignedIdentities: !empty(userAssignedIdentityResourceId) ? {
+      '${userAssignedIdentityResourceId}': {}
+    } : null
   } : null
   properties: {
     serverFarmId: serverFarmId
