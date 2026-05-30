@@ -603,9 +603,13 @@ var frontDoorHostName = frontDoorEndpoint.?properties.hostName ?? ''
 var frontDoorId = frontDoorProfile.?properties.frontDoorId ?? ''
 var calculatedPublicApiUrl = enableFrontDoor ? 'https://${frontDoorHostName}/api/v1' : (enableApiManagement ? '${apiGatewayUrl}/api/v1' : nextPublicApiUrl)
 
+var apiAllowedHosts = createStagingSlots
+  ? '${apiAppName}.azurewebsites.net;${apiAppName}-${slotName}.azurewebsites.net'
+  : '${apiAppName}.azurewebsites.net'
+
 var apiAppSettings = union({
   ASPNETCORE_ENVIRONMENT: 'Production'
-  AllowedHosts: '${apiAppName}.azurewebsites.net'
+  AllowedHosts: apiAllowedHosts
   Database__Provider: 'SqlServer'
   ConnectionStrings__SqlServer: apiConnectionStringSetting
   AZURE_CLIENT_ID: apiSqlClientId
