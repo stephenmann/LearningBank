@@ -495,6 +495,7 @@ jobs:
         run: |
           curl --fail --show-error --silent \
             -H "X-CI-Bypass: ${WAF_CI_BYPASS_TOKEN}" \
+            -H "User-Agent: GitHub-Actions-CI/1.0" \
             "https://${{ steps.frontdoor-host.outputs.hostname }}/" > /dev/null
 
       - name: Deployment summary
