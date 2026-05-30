@@ -411,7 +411,7 @@ jobs:
           export PATH="$PATH:$HOME/.dotnet/tools"
           # SQL_SERVER_FQDN / SQL_DATABASE_NAME come from the Bicep deployment
           # outputs (set in GITHUB_ENV above). Authenticates as the workflow's
-          # OIDC identity via Active Directory Default — no SQL credentials
+          # OIDC identity via Active Directory Default - no SQL credentials
           # required.
           export Database__Provider=SqlServer
           export ConnectionStrings__SqlServer="Server=tcp:${SQL_SERVER_FQDN},1433;Initial Catalog=${SQL_DATABASE_NAME};Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=Active Directory Default"
