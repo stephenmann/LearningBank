@@ -148,6 +148,13 @@ jobs:
           echo "SQL_SERVER_FQDN=$SQL_FQDN" >> "$GITHUB_ENV"
           echo "SQL_DATABASE_NAME=$SQL_DB" >> "$GITHUB_ENV"
 
+      - name: Refresh Azure Login (OIDC) before SQL user setup
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
       - name: Configure SQL contained users (OIDC, no deploymentScripts)
         run: |
           set -euo pipefail
@@ -229,6 +236,13 @@ jobs:
           app-name: ${{ env.API_APP_NAME }}
           slot-name: ${{ env.SLOT_NAME }}
           package: ./artifacts/api
+
+      - name: Refresh Azure Login (OIDC) before EF migrations
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Run EF Core migrations against production DB
         run: |
