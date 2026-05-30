@@ -95,6 +95,9 @@ The workflow passes these production-focused values:
 - AZURE_AD_TENANT_ID
 - NEXTAUTH_URL
 - NEXT_PUBLIC_API_URL
+- FRONT_DOOR_ROOT_DOMAIN_HOSTNAME (optional, default `mylearningbank.com`)
+- FRONT_DOOR_WWW_DOMAIN_HOSTNAME (optional, default `www.mylearningbank.com`)
+- FRONT_DOOR_DNS_ZONE_RESOURCE_ID (optional, default LearningBank `mylearningbank.com` DNS zone resource ID)
 - API_MANAGEMENT_PUBLISHER_EMAIL (optional, default fallback exists)
 - API_MANAGEMENT_PUBLISHER_NAME (optional, default fallback exists)
 

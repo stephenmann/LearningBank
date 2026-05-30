@@ -75,6 +75,18 @@ param frontDoorSkuName string = 'Standard_AzureFrontDoor'
 @description('Front Door Web Application Firewall policy name.')
 param frontDoorWafPolicyName string = 'learningBankFdWaf'
 
+@description('Enable Front Door custom domains for apex and www hosts.')
+param enableFrontDoorCustomDomains bool = false
+
+@description('Root custom domain host name for Front Door (for example mylearningbank.com).')
+param frontDoorRootDomainHostName string = 'mylearningbank.com'
+
+@description('WWW custom domain host name for Front Door (for example www.mylearningbank.com).')
+param frontDoorWwwDomainHostName string = 'www.mylearningbank.com'
+
+@description('Azure DNS zone resource ID used for Front Door managed custom domains.')
+param frontDoorDnsZoneResourceId string = ''
+
 @description('API auth authority URL.')
 param apiAuthAuthority string
 
@@ -424,6 +436,9 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2024-02-01' = if (enableFrontD
   sku: {
     name: frontDoorSkuName
   }
+  properties: {
+    originResponseTimeoutSeconds: 30
+  }
 }
 
 resource frontDoorEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = if (enableFrontDoor) {
@@ -506,10 +521,66 @@ resource apiOrigin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = if
   }
 }
 
+resource frontDoorRootCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-01' = if (enableFrontDoor && enableFrontDoorCustomDomains) {
+  name: replace(frontDoorRootDomainHostName, '.', '-')
+  parent: frontDoorProfile
+  properties: {
+    hostName: frontDoorRootDomainHostName
+    tlsSettings: {
+      certificateType: 'ManagedCertificate'
+      minimumTlsVersion: 'TLS12'
+    }
+    azureDnsZone: {
+      id: frontDoorDnsZoneResourceId
+    }
+  }
+}
+
+resource frontDoorWwwCustomDomain 'Microsoft.Cdn/profiles/customDomains@2024-02-01' = if (enableFrontDoor && enableFrontDoorCustomDomains) {
+  name: replace(frontDoorWwwDomainHostName, '.', '-')
+  parent: frontDoorProfile
+  properties: {
+    hostName: frontDoorWwwDomainHostName
+    tlsSettings: {
+      certificateType: 'ManagedCertificate'
+      minimumTlsVersion: 'TLS12'
+    }
+    azureDnsZone: {
+      id: frontDoorDnsZoneResourceId
+    }
+  }
+}
+
+var webRouteCustomDomains = enableFrontDoorCustomDomains ? [
+  {
+    id: frontDoorRootCustomDomain.id
+  }
+  {
+    id: frontDoorWwwCustomDomain.id
+  }
+] : []
+
+var frontDoorWafAssociationDomains = enableFrontDoorCustomDomains ? [
+  {
+    id: frontDoorEndpoint.id
+  }
+  {
+    id: frontDoorRootCustomDomain.id
+  }
+  {
+    id: frontDoorWwwCustomDomain.id
+  }
+] : [
+  {
+    id: frontDoorEndpoint.id
+  }
+]
+
 resource webRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = if (enableFrontDoor) {
   name: 'web-route'
   parent: frontDoorEndpoint
   properties: {
+    customDomains: webRouteCustomDomains
     originGroup: {
       id: webOriginGroup.id
     }
@@ -530,6 +601,7 @@ resource apiRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = if (
   name: 'api-route'
   parent: frontDoorEndpoint
   properties: {
+    customDomains: webRouteCustomDomains
     originGroup: {
       id: apiOriginGroup.id
     }
@@ -559,6 +631,86 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
       mode: 'Prevention'
       requestBodyCheck: 'Enabled'
     }
+    customRules: {
+      rules: [
+        {
+          name: 'block-non-us'
+          enabledState: 'Enabled'
+          priority: 100
+          ruleType: 'MatchRule'
+          action: 'Block'
+          matchConditions: [
+            {
+              matchVariable: 'RemoteAddr'
+              operator: 'GeoMatch'
+              negateCondition: true
+              matchValue: [
+                'US'
+              ]
+            }
+          ]
+        }
+        {
+          name: 'rate-limit-api-auth'
+          enabledState: 'Enabled'
+          priority: 200
+          ruleType: 'RateLimitRule'
+          rateLimitDurationInMinutes: 1
+          rateLimitThreshold: 30
+          action: 'Block'
+          matchConditions: [
+            {
+              matchVariable: 'RequestUri'
+              operator: 'Contains'
+              matchValue: [
+                '/api/auth'
+              ]
+            }
+          ]
+        }
+        {
+          name: 'rate-limit-api-general'
+          enabledState: 'Enabled'
+          priority: 210
+          ruleType: 'RateLimitRule'
+          rateLimitDurationInMinutes: 1
+          rateLimitThreshold: 200
+          action: 'Block'
+          matchConditions: [
+            {
+              matchVariable: 'RequestUri'
+              operator: 'Contains'
+              matchValue: [
+                '/api/'
+              ]
+            }
+          ]
+        }
+        {
+          name: 'block-common-bot-user-agents'
+          enabledState: 'Enabled'
+          priority: 300
+          ruleType: 'MatchRule'
+          action: 'Block'
+          matchConditions: [
+            {
+              matchVariable: 'RequestHeader'
+              selector: 'User-Agent'
+              operator: 'Contains'
+              matchValue: [
+                'python-requests'
+                'python-httpx'
+                'curl/'
+                'wget/'
+                'scrapy'
+                'selenium'
+                'headlesschrome'
+              ]
+            }
+          ]
+        }
+      ]
+    }
     // Managed rule sets require the Premium Front Door tier; the Standard tier
     // supports custom rules only. The managedRules property is required either
     // way, so on Standard supply an empty managedRuleSets list.
@@ -567,6 +719,10 @@ resource frontDoorWafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPo
         {
           ruleSetType: 'Microsoft_DefaultRuleSet'
           ruleSetVersion: '2.1'
+        }
+        {
+          ruleSetType: 'Microsoft_BotManagerRuleSet'
+          ruleSetVersion: '1.0'
         }
       ] : []
     }
@@ -584,11 +740,7 @@ resource frontDoorSecurityPolicy 'Microsoft.Cdn/profiles/securityPolicies@2024-0
       }
       associations: [
         {
-          domains: [
-            {
-              id: frontDoorEndpoint.id
-            }
-          ]
+          domains: frontDoorWafAssociationDomains
           patternsToMatch: [
             '/*'
           ]
@@ -600,8 +752,9 @@ resource frontDoorSecurityPolicy 'Microsoft.Cdn/profiles/securityPolicies@2024-0
 
 var appInsightsConnectionString = appInsights.?properties.ConnectionString ?? ''
 var frontDoorHostName = frontDoorEndpoint.?properties.hostName ?? ''
+var frontDoorPublicHostName = enableFrontDoorCustomDomains ? frontDoorRootDomainHostName : frontDoorHostName
 var frontDoorId = frontDoorProfile.?properties.frontDoorId ?? ''
-var calculatedPublicApiUrl = enableFrontDoor ? 'https://${frontDoorHostName}/api/v1' : (enableApiManagement ? '${apiGatewayUrl}/api/v1' : nextPublicApiUrl)
+var calculatedPublicApiUrl = enableFrontDoor ? 'https://${frontDoorPublicHostName}/api/v1' : (enableApiManagement ? '${apiGatewayUrl}/api/v1' : nextPublicApiUrl)
 
 var apiAllowedHosts = createStagingSlots
   ? '${apiAppName}.azurewebsites.net;${apiAppName}-${slotName}.azurewebsites.net'

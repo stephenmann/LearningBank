@@ -37,6 +37,9 @@ jobs:
       FRONT_DOOR_PROFILE_NAME: learningbank-fd-prod
       FRONT_DOOR_ENDPOINT_NAME: learningbank-edge-prod
       FRONT_DOOR_WAF_POLICY_NAME: learningBankFdWafProd
+      FRONT_DOOR_ROOT_DOMAIN_HOSTNAME: ${{ vars.FRONT_DOOR_ROOT_DOMAIN_HOSTNAME != '' && vars.FRONT_DOOR_ROOT_DOMAIN_HOSTNAME || 'mylearningbank.com' }}
+      FRONT_DOOR_WWW_DOMAIN_HOSTNAME: ${{ vars.FRONT_DOOR_WWW_DOMAIN_HOSTNAME != '' && vars.FRONT_DOOR_WWW_DOMAIN_HOSTNAME || 'www.mylearningbank.com' }}
+      FRONT_DOOR_DNS_ZONE_RESOURCE_ID: ${{ vars.FRONT_DOOR_DNS_ZONE_RESOURCE_ID != '' && vars.FRONT_DOOR_DNS_ZONE_RESOURCE_ID || '/subscriptions/21c70219-0509-4bf8-99a4-3d37145f583a/resourceGroups/LearningBank/providers/Microsoft.Network/dnszones/mylearningbank.com' }}
 
     steps:
       - name: Checkout
@@ -128,10 +131,14 @@ jobs:
               apiManagementPublisherEmail="$API_MANAGEMENT_PUBLISHER_EMAIL" \
               apiManagementPublisherName="$API_MANAGEMENT_PUBLISHER_NAME" \
               enableFrontDoor=true \
+              enableFrontDoorCustomDomains=true \
               frontDoorProfileName="$FRONT_DOOR_PROFILE_NAME" \
               frontDoorEndpointName="$FRONT_DOOR_ENDPOINT_NAME" \
               frontDoorSkuName='Standard_AzureFrontDoor' \
               frontDoorWafPolicyName="$FRONT_DOOR_WAF_POLICY_NAME" \
+              frontDoorRootDomainHostName="$FRONT_DOOR_ROOT_DOMAIN_HOSTNAME" \
+              frontDoorWwwDomainHostName="$FRONT_DOOR_WWW_DOMAIN_HOSTNAME" \
+              frontDoorDnsZoneResourceId="$FRONT_DOOR_DNS_ZONE_RESOURCE_ID" \
               apiAuthAuthority="$API_AUTH_AUTHORITY" \
               apiAuthAudience="$API_AUTH_AUDIENCE" \
               nextAuthUrl="$NEXTAUTH_URL" \
