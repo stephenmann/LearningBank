@@ -44,6 +44,8 @@ Primary template parameters:
 - sqlDatabaseName
 - sqlAdminIdentityName (user-assigned identity used as the SQL Entra admin)
 - deployPrincipalObjectId (deploy SP object id, granted db_ddladmin for migrations)
+- enableFrontDoorDnsRecords (optional; reconciles apex/www Azure DNS records to Front Door)
+- frontDoorDnsZoneName (optional; Azure DNS zone name when DNS reconciliation is enabled)
 
 The passwordless API connection string is computed from the provisioned SQL
 server/database and exposed as the `apiConnectionString` deployment output

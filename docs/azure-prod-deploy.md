@@ -81,7 +81,12 @@ The workflow passes these production-focused values:
 - apiManagementSkuCapacity=1
 - enableFrontDoor=true
 - frontDoorSkuName=Standard_AzureFrontDoor
+- enableFrontDoorDnsRecords=true
 - logRetentionInDays=30
+
+With `enableFrontDoorDnsRecords=true`, the Bicep deployment also reconciles DNS records in the configured Azure DNS zone:
+- Apex (`@`) as an alias A record to the Front Door endpoint resource.
+- `www` as a CNAME to the Front Door endpoint hostname.
 
 ## Required GitHub Variables
 - AZURE_CLIENT_ID
@@ -98,6 +103,7 @@ The workflow passes these production-focused values:
 - FRONT_DOOR_ROOT_DOMAIN_HOSTNAME (optional, default `mylearningbank.com`)
 - FRONT_DOOR_WWW_DOMAIN_HOSTNAME (optional, default `www.mylearningbank.com`)
 - FRONT_DOOR_DNS_ZONE_RESOURCE_ID (optional, default LearningBank `mylearningbank.com` DNS zone resource ID)
+- FRONT_DOOR_DNS_ZONE_NAME (optional, default `mylearningbank.com`)
 - API_MANAGEMENT_PUBLISHER_EMAIL (optional, default fallback exists)
 - API_MANAGEMENT_PUBLISHER_NAME (optional, default fallback exists)
 
@@ -142,6 +148,9 @@ and connect as the deploy identity.
    subscription scope (covered by subscription-scope Contributor). If the
    identity is only scoped to the resource group, register the providers once
    manually with `az provider register --namespace <ns>`.
+5. If DNS drift prevention is enabled (`enableFrontDoorDnsRecords=true`), the
+	deployment identity must also have permission to update record sets in the
+	DNS zone resource group (for example **DNS Zone Contributor** on the zone).
 
 > Front Door WAF managed rule sets require the **Premium** Front Door tier. With
 > the Standard tier (the prod default), the WAF policy uses custom rules only;

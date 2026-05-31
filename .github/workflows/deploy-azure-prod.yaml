@@ -40,6 +40,7 @@ jobs:
       FRONT_DOOR_ROOT_DOMAIN_HOSTNAME: ${{ vars.FRONT_DOOR_ROOT_DOMAIN_HOSTNAME != '' && vars.FRONT_DOOR_ROOT_DOMAIN_HOSTNAME || 'mylearningbank.com' }}
       FRONT_DOOR_WWW_DOMAIN_HOSTNAME: ${{ vars.FRONT_DOOR_WWW_DOMAIN_HOSTNAME != '' && vars.FRONT_DOOR_WWW_DOMAIN_HOSTNAME || 'www.mylearningbank.com' }}
       FRONT_DOOR_DNS_ZONE_RESOURCE_ID: ${{ vars.FRONT_DOOR_DNS_ZONE_RESOURCE_ID != '' && vars.FRONT_DOOR_DNS_ZONE_RESOURCE_ID || '/subscriptions/21c70219-0509-4bf8-99a4-3d37145f583a/resourceGroups/LearningBank/providers/Microsoft.Network/dnszones/mylearningbank.com' }}
+      FRONT_DOOR_DNS_ZONE_NAME: ${{ vars.FRONT_DOOR_DNS_ZONE_NAME != '' && vars.FRONT_DOOR_DNS_ZONE_NAME || 'mylearningbank.com' }}
       FRONT_DOOR_CREATE_CUSTOM_DOMAINS: ${{ vars.FRONT_DOOR_CREATE_CUSTOM_DOMAINS != '' && vars.FRONT_DOOR_CREATE_CUSTOM_DOMAINS || 'false' }}
       FRONT_DOOR_ROOT_CUSTOM_DOMAIN_NAME: ${{ vars.FRONT_DOOR_ROOT_CUSTOM_DOMAIN_NAME != '' && vars.FRONT_DOOR_ROOT_CUSTOM_DOMAIN_NAME || 'mylearningbank-com-c8a3' }}
       FRONT_DOOR_WWW_CUSTOM_DOMAIN_NAME: ${{ vars.FRONT_DOOR_WWW_CUSTOM_DOMAIN_NAME != '' && vars.FRONT_DOOR_WWW_CUSTOM_DOMAIN_NAME || 'www-mylearningbank-com-5935' }}
@@ -143,6 +144,8 @@ jobs:
               frontDoorRootDomainHostName="$FRONT_DOOR_ROOT_DOMAIN_HOSTNAME" \
               frontDoorWwwDomainHostName="$FRONT_DOOR_WWW_DOMAIN_HOSTNAME" \
               frontDoorDnsZoneResourceId="$FRONT_DOOR_DNS_ZONE_RESOURCE_ID" \
+              enableFrontDoorDnsRecords=true \
+              frontDoorDnsZoneName="$FRONT_DOOR_DNS_ZONE_NAME" \
               frontDoorWafCiBypassToken="$WAF_CI_BYPASS_TOKEN" \
               frontDoorCreateCustomDomains="$FRONT_DOOR_CREATE_CUSTOM_DOMAINS" \
               frontDoorRootCustomDomainName="$FRONT_DOOR_ROOT_CUSTOM_DOMAIN_NAME" \

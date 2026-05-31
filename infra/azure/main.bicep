@@ -87,6 +87,15 @@ param frontDoorWwwDomainHostName string = 'www.mylearningbank.com'
 @description('Azure DNS zone resource ID used for Front Door managed custom domains.')
 param frontDoorDnsZoneResourceId string = ''
 
+@description('Set true to manage apex/www Azure DNS records for Front Door in this deployment.')
+param enableFrontDoorDnsRecords bool = false
+
+@description('TTL (seconds) for managed apex/www DNS records.')
+param frontDoorDnsRecordTtl int = 3600
+
+@description('Azure DNS zone name that contains apex/www records for Front Door.')
+param frontDoorDnsZoneName string = ''
+
 @description('Set true to create Front Door custom domains. Set false to reference already-existing custom domains.')
 param frontDoorCreateCustomDomains bool = false
 
@@ -460,6 +469,35 @@ resource frontDoorEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = if
   location: 'global'
   properties: {
     enabledState: 'Enabled'
+  }
+}
+
+var frontDoorEndpointHostNameForDns = frontDoorEndpoint.?properties.hostName ?? ''
+var manageFrontDoorDns = enableFrontDoor && enableFrontDoorCustomDomains && enableFrontDoorDnsRecords && !empty(frontDoorDnsZoneName)
+
+resource frontDoorDnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = if (manageFrontDoorDns) {
+  name: frontDoorDnsZoneName
+}
+
+resource frontDoorApexAliasRecord 'Microsoft.Network/dnsZones/A@2023-07-01-preview' = if (manageFrontDoorDns) {
+  parent: frontDoorDnsZone
+  name: '@'
+  properties: {
+    TTL: frontDoorDnsRecordTtl
+    targetResource: {
+      id: frontDoorEndpoint.id
+    }
+  }
+}
+
+resource frontDoorWwwCnameRecord 'Microsoft.Network/dnsZones/CNAME@2023-07-01-preview' = if (manageFrontDoorDns) {
+  parent: frontDoorDnsZone
+  name: 'www'
+  properties: {
+    TTL: frontDoorDnsRecordTtl
+    CNAMERecord: {
+      cname: frontDoorEndpointHostNameForDns
+    }
   }
 }
 
